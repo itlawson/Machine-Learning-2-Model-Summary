@@ -1,0 +1,449 @@
+---
+title: "ML_2_Summary"
+author: "Study Crew"
+date: "3/9/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Machine Learning 2 Summary Document
+
+This document is a comprehensive summary for Machine Learning 2. It is intended to help us study for the exams and for future reference in our professional lives (if any companies actually use R).
+
+
+## Forward and Backward Selection
+Author: Matt Sadosuk
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## Ridge Regression
+Author: Sarah Brown
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## Lasso Regression
+Author: Jill Van den Dungen 
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## Principal Component Regression
+Author: Alex King
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## Polynomial Regression
+Author: Carrington Metts
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## Step Functions
+Author: Alex Russett
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## Regression Splines
+Author: Andrew Tremblay & Thomas Trankle
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## Smoothing Splines
+Author: Emma Harrison
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## Local Regression 
+Author: Kayleigh Gillis
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## GAM
+Author: Akram Bijapuri
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## Tree Classification and Regression 
+Author: Ian Lawson 
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+--------------------------------------------------------------------------------
+
+
+## Bagging and Random Forest
+Author: Witty Wittyngham
+
+### Summary/description:
+
+
+### When to employ this method/model:
+
+
+
+### Model Code and Inputs:
+
+```{r}
+
+```
+
+### Model Tests:
+
+```{r}
+
+```
+
+### Model Improvements:
+
+```{r}
+
+```
+
+### Comprehensive Example:
+
+```{r}
+
+```
+
+
+
+

@@ -247,69 +247,72 @@ Author: Alex King
 Author: Carrington Metts
 
 ### Summary/description:
-
+Polynomial regression fits a polynomial curve to a set of data. It is analagous to linear regression, but allows greater flexibility 
+to fit to data that does not have a linear relationship. 
 
 ### When to employ this method/model:
+Polynomial regression should be used when there is a continuous response variable and one or more continuous features, 
+and there is a nonlinear relationship between the X and Y variables. 
 
+Polynomial regression may also be used to 
 
 
 ### Model Code and Inputs:
+A polynomial fit can be produced with either orthogonal or non-orthogonal terms. Having orthogonal polynomials means each 
+term in the fit is a linear combination of each polynomial term (age^2, age^3, age^4, etc.) Non-orthogonal polynomials 
+means the coefficients are reported directly. Both versions of orthogonality will result in the same fitted values. 
+When creating models, it is best to always use orthogonal terms, since non-orthogonal terms are correlated with 
+each other and therefore result in a multicollinearity problem. 
 
-```{r}
+As with linear regression, we use lm() or glm() to create the fit. Within lm() or glm(), the poly() function automatically creates orthogonal
+terms. The cbind() function can be used to create non-orthogonal terms. To create a model, we will use the Wage data (from ISLR) to predict
+wage as a function of age. We can then use coef() to get the coefficients of the model. 
+
+```{r poly_model, warning=FALSE}
+library(ISLR)
+#fit a degree-4 polynomial in 2 ways
+orthogonal_fit <- lm(wage~poly(age,4), data=Wage)
+summary(orthogonal_fit)
+
+#2 identical methods for creating non-orthogonal terms
+#When fitting real models, do NOT do this 
+raw_fit <- lm(wage~cbind(age, age^2, age^3, age^4))
+raw_fit2 <- lm(wage~poly(age,4, raw=TRUE), data=Wage)
+summary(raw_fit)
+summary(raw_fit2)
 
 ```
 
 ### Model Tests:
+It is important to choose the lowest-degree model that adequately models the data. To do so, we use the ANOVA (analysis of variance)
+test. ANOVA computes an F-test against two hypotheses: the null hypothesis, which states that a simple model is sufficient 
+to explain the data, against a complex hypothesis, which states that a higher-order model is required. 
 
-```{r}
+To determine the best model for the Wage data, we will create 5 different polynomial models and run ANOVA. 
+```{r poly_tests}
+library(ISLR)
+fit.1 <- lm(wage~age, data=Wage)
+fit.2 <- lm(wage~poly(age,2), data=Wage)
+fit.3 <- lm(wage~poly(age,3), data=Wage)
+fit.4 <- lm(wage~poly(age,4), data=Wage)
+fit.5 <- lm(wage~poly(age,5), data=Wage)
+
+anova(fit.1, fit.2, fit.3, fit.4, fit.5)
 
 ```
 
+Here, we see that the p-values for fits 2 and 3 are less than 0.05, which means the models are significant. However, the p-value for 
+fit 4 is 0.051046. This means the fourth model is not significantly better than the third model. Therefore, we should use the third-order model. 
+
 ### Model Improvements:
 
-```{r}
+```{r poly_improve}
 
 ```
 
 ### Comprehensive Example:
 
-```{r}
-
-```
---------------------------------------------------------------------------------
-
-
-## Step Functions {.tabset}
-Author: Alex Russett
-
-### Summary/description:
-
-
-### When to employ this method/model:
-
-
-
-### Model Code and Inputs:
-
-```{r}
-
-```
-
-### Model Tests:
-
-```{r}
-
-```
-
-### Model Improvements:
-
-```{r}
-
-```
-
-### Comprehensive Example:
-
-```{r}
+```{r poly_comprehensive}
 
 ```
 --------------------------------------------------------------------------------

@@ -333,6 +333,25 @@ The points where the coefficients change are called *knots*.
 
 In general, if we place *K* different knots throughout the range of *X*, then we
 will end up fitting *K + 1* different polynomials.
+```{r, echo = F}
+knitr::include_graphics("./regKnots.png")
+```
+
+To make it a continuous function we add constraints to the model.
+Each constraint that we impose on the piecewise polynomials effectively frees up one
+degree of freedom.
+
+Remember, there are degrees of freedom for the entire model(Total DF) and the 
+specified degrees of freedom for the polynomial (df).
+ df = degree + knots
+```{r, eval = F}
+# Using the bs() function
+bs(x , df = NULL, knots = NULL, degree = 3 #default
+   intercept = False)
+```
+
+\centering
+Total DF = 1 + df = 1 + degree + knots
 
 ### When to employ this method/model:
 

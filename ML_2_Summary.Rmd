@@ -2,7 +2,11 @@
 title: "ML_2_Summary"
 author: "Study Crew"
 date: "3/9/2021"
-output: pdf_document
+output:
+    html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -72,7 +76,7 @@ Logistic Regression
 
 ### Model Code and Inputs:
 
-```{r,eval=F}
+```{r,eval = F}
 #First, divide the data into training and testing (in this case, its 75% training)
 # (6) Create the train (75%) and test (25%) data sets 
 train = sample(1:nrow(x), nrow(x)*.75)
@@ -86,7 +90,7 @@ mod.ridge <- glmnet(x[train,], y[train], alpha=0, lambda =grid)
 
 ### Model Tests:
 
-``` {r,eval=F}
+``` {r,eval = F}
 #Evaluate training model performance (how well it predicted the y-values) by using cross-validation, which is the cv.glmnet() function. (In this example code, we are creating a 12-fold cross-validation model, but by default it is a 10-fold cv).
 cv.out.ridge <- cv.glmnet(x[train,], y[train], alpha=0, lambda = grid, nfolds = 12)
 plot(cv.out.ridge)
@@ -94,7 +98,7 @@ plot(cv.out.ridge)
 
 ### Model Improvements:
 
-``` {r, eval= F}
+``` {r,eval = F}
 #Make predictions using the best model by using the best lambda. Create a vector of test set #predictions.
 bestlam_r <- cv.out.ridge$lambda.min
 ridge.pred <- predict(mod.ridge, s=bestlam_r, newx=x[test,])
@@ -105,7 +109,7 @@ MSE_best_ridge<-mean((ridge.pred - y.test)^2)
 
 ### Comprehensive Example:
 
-```{r, eval = F}
+```{r,eval = F}
 #Part 1: Exploring ridge regression without using a test and train set
 #Using the hitters data set, we set up the "x" and "y" matrix values so that we can use the glmnet function. 
 x=model.matrix(Salary~.,HitData)[,-1]
@@ -383,7 +387,7 @@ lots of degrees of freedom (one @ each knot = sample size n)
 
 ### Model Code and Inputs:
 
-```{r, eval = F}
+```{r,eval = F}
 (9) Now let's fit smoothing splines with cross-validation
 regression_fit=smooth.spline(x,y,df=12)   #use the first fit to set df
 smooth_fit=smooth.spline(x,y, cv=TRUE)  #fits the training data with LOOCV
@@ -410,13 +414,13 @@ title("Smoothing Spline")
 
 ### Model Improvements:
 
-```{r, eval = F}
+```{r,eval = F}
 N/A... would just use a different model
 ```
 
 ### Comprehensive Example:
 
-```{r, eval = F}
+```{r,eval = F}
 > library(splines)
 > fit=lm(wage∼bs(age ,knots=c(25,40,60) ),data=Wage)
 > pred=predict (fit ,newdata =list(age=age.grid),se=T)

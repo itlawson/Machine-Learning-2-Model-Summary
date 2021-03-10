@@ -54,34 +54,115 @@ Author: Matt Sadosuk
 Author: Sarah Brown
 
 ### Summary/description:
-
+With this method, you shrink the B coefficients of your features towards 0. It reduces variance but increases bias in the training data. It doesn't let you make a coefficient 0 (it shrinks asymptotically) and so no features are eliminated. So, we use this when most features are useful and none seem irrelevant (if they did, you'd look at using lasso perhaps). As λ goes up, beta slope goes down and the line gets flatter which means the model is less sensative to the features. This means that the weight decay in gradient descent is larger.
 
 ### When to employ this method/model:
+When the the training model is very accurate, but the test model is not, signaling that there is a large least squares error (high variance) in the test model. This means that the line is overfit to the training data. You want to minimize the the cost function which is: RSS + λ * (slope)^2 [penalty] where λ is the severity of the penalty, and is a tuning parameter. You can use ridge regression with:
 
+Multiple regression
+    λ(slope12 + slope22 + ….) (except for intercept)
 
+Categorical X (binary)
+    Slope = difference between the two categories
+
+Logistic Regression
+    Categorical Y
+    Optimizes sum of likelihoods (rather than RSS)
+*Multiple Regression thru Logistic Regression above, is directly out of Professor Li's Ppt
 
 ### Model Code and Inputs:
 
 ```{r}
+#First, divide the data into training and testing (in this case, its 75% training)
+# (6) Create the train (75%) and test (25%) data sets 
+train = sample(1:nrow(x), nrow(x)*.75)
+test=(-train)
+y.test=y[test]
 
+#Create a grid of lambda valaues. Then use the glmnet() function to create a model to predict the #training y's using the training x's. Use alpha = 0 for ridge regression.
+grid=10^seq(10,-3, length =120)
+mod.ridge <- glmnet(x[train,], y[train], alpha=0, lambda =grid)
 ```
 
 ### Model Tests:
 
 ```{r}
-
+#Evaluate training model performance (how well it predicted the y-values) by using cross-validation, which is the cv.glmnet() function. (In this example code, we are creating a 12-fold cross-validation model, but by default it is a 10-fold cv).
+cv.out.ridge <- cv.glmnet(x[train,], y[train], alpha=0, lambda = grid, nfolds = 12)
+plot(cv.out.ridge)
 ```
 
 ### Model Improvements:
 
 ```{r}
+#Make predictions using the best model by using the best lambda. Create a vector of test set #predictions.
+bestlam_r <- cv.out.ridge$lambda.min
+ridge.pred <- predict(mod.ridge, s=bestlam_r, newx=x[test,])
 
+#Compute and display the test error rate.
+MSE_best_ridge<-mean((ridge.pred - y.test)^2) 
 ```
 
 ### Comprehensive Example:
 
 ```{r}
+#Part 1: Exploring ridge regression without using a test and train set
+#Using the hitters data set, we set up the "x" and "y" matrix values so that we can use the glmnet function. 
+x=model.matrix(Salary~.,HitData)[,-1]
+y=HitData$Salary
 
+#Make a grid of lambda values, and see how many coefficients you have and how many potential lambda #values there are.
+grid=10^seq(10,-2,length=100)
+ridge.mod=glmnet(x,y,alpha = 0,lambda = grid)
+COEF<-coef(ridge.mod)
+dim(COEF)
+[1]  20 100 # 20 coefficients and 100 possible lambda values
+
+#You can look at various lambda values and how they preform. Here is an example of looking at the #50th lambda value from the grid. 
+ridge.mod$lambda[50]
+[1] 11497.57
+coef(ridge.mod)[,50]
+  (Intercept)         AtBat          Hits         HmRun          Runs 
+407.356050200   0.036957182   0.138180344   0.524629976   0.230701523 
+          RBI         Walks         Years        CAtBat         CHits 
+  0.239841459   0.289618741   1.107702929   0.003131815   0.011653637 
+       CHmRun         CRuns          CRBI        CWalks       LeagueN 
+  0.087545670   0.023379882   0.024138320   0.025015421   0.085028114 
+    DivisionW       PutOuts       Assists        Errors    NewLeagueN 
+ -6.215440973   0.016482577   0.002612988  -0.020502690   0.301433531 
+sqrt(sum(coef(ridge.mod)[-1,50]^2))# Find the L2 value
+[1] 6.360612
+
+#Part 2: Predicting with a test and train set also using the hitters data
+#Create test and train 
+set.seed(1)
+train<-sample(1:nrow(x),nrow(x)/2)
+test=(-train)
+y.test=y[test]
+
+#To choose the best lambda value, we use cv.glmnet. We can find the best lambda and associated MSE.
+set.seed(1)
+cv.out=cv.glmnet(x[train,],y[train],alpha=0)
+plot(cv.out)
+bestlam<-cv.out$lambda.min
+bestlam #326.0828
+[1] 326.0828
+ridge.pred<-predict(ridge.mod,s=bestlam,newx = x[test,])
+mean((ridge.pred-y.test)^2) # 139856.6
+[1] 139856.6
+
+#We can also explore what the coefficients look like using the whole data set and our best lamda #value
+out<-glmnet(x,y,alpha = 0)
+predict(out,type = "coefficients",s=bestlam)[1:20,]
+ (Intercept)        AtBat         Hits        HmRun         Runs          RBI 
+ 15.44383135   0.07715547   0.85911581   0.60103107   1.06369007   0.87936105 
+       Walks        Years       CAtBat        CHits       CHmRun        CRuns 
+  1.62444616   1.35254780   0.01134999   0.05746654   0.40680157   0.11456224 
+        CRBI       CWalks      LeagueN    DivisionW      PutOuts      Assists 
+  0.12116504   0.05299202  22.09143189 -79.04032637   0.16619903   0.02941950 
+      Errors   NewLeagueN 
+ -1.36092945   9.12487767 
+# no coefficients are zero because in ridge regression they aren't allowed to be
 ```
 --------------------------------------------------------------------------------
 

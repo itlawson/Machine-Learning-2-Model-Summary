@@ -9,12 +9,12 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Machine Learning 2 Summary Document
+# Machine Learning 2 Summary Document {.tabset}
 
 This document is a comprehensive summary for Machine Learning 2. It is intended to help us study for the exams and for future reference in our professional lives (if any companies actually use R).
 
 
-## Forward and Backward Selection
+## Forward and Backward Selection {.tabset}
 Author: Matt Sadosuk
 
 ### Summary/description:
@@ -50,7 +50,7 @@ Author: Matt Sadosuk
 --------------------------------------------------------------------------------
 
 
-## Ridge Regression
+## Ridge Regression {.tabset}
 Author: Sarah Brown
 
 ### Summary/description:
@@ -86,7 +86,7 @@ mod.ridge <- glmnet(x[train,], y[train], alpha=0, lambda =grid)
 
 ### Model Tests:
 
-```{r}
+``` {r}
 #Evaluate training model performance (how well it predicted the y-values) by using cross-validation, which is the cv.glmnet() function. (In this example code, we are creating a 12-fold cross-validation model, but by default it is a 10-fold cv).
 cv.out.ridge <- cv.glmnet(x[train,], y[train], alpha=0, lambda = grid, nfolds = 12)
 plot(cv.out.ridge)
@@ -94,7 +94,7 @@ plot(cv.out.ridge)
 
 ### Model Improvements:
 
-```{r}
+``` {r}
 #Make predictions using the best model by using the best lambda. Create a vector of test set #predictions.
 bestlam_r <- cv.out.ridge$lambda.min
 ridge.pred <- predict(mod.ridge, s=bestlam_r, newx=x[test,])
@@ -167,7 +167,7 @@ predict(out,type = "coefficients",s=bestlam)[1:20,]
 --------------------------------------------------------------------------------
 
 
-## Lasso Regression
+## Lasso Regression {.tabset}
 Author: Jill Van den Dungen 
 
 ### Summary/description:
@@ -203,7 +203,7 @@ Author: Jill Van den Dungen
 --------------------------------------------------------------------------------
 
 
-## Principal Component Regression
+## Principal Component Regression {.tabset}
 Author: Alex King
 
 ### Summary/description:
@@ -239,7 +239,7 @@ Author: Alex King
 --------------------------------------------------------------------------------
 
 
-## Polynomial Regression
+## Polynomial Regression {.tabset}
 Author: Carrington Metts
 
 ### Summary/description:
@@ -275,7 +275,7 @@ Author: Carrington Metts
 --------------------------------------------------------------------------------
 
 
-## Step Functions
+## Step Functions {.tabset}
 Author: Alex Russett
 
 ### Summary/description:
@@ -311,7 +311,7 @@ Author: Alex Russett
 --------------------------------------------------------------------------------
 
 
-## Regression Splines
+## Regression Splines {.tabset}
 Author: Andrew Tremblay & Thomas Trankle
 
 ### Summary/description:
@@ -347,7 +347,7 @@ Author: Andrew Tremblay & Thomas Trankle
 --------------------------------------------------------------------------------
 
 
-## Smoothing Splines
+## Smoothing Splines {.tabset}
 Author: Emma Harrison
 
 ### Summary/description:
@@ -383,7 +383,7 @@ Author: Emma Harrison
 --------------------------------------------------------------------------------
 
 
-## Local Regression 
+## Local Regression {.tabset}
 Author: Kayleigh Gillis
 
 ### Summary/description:
@@ -419,7 +419,7 @@ Author: Kayleigh Gillis
 --------------------------------------------------------------------------------
 
 
-## GAM
+## GAM {.tabset}
 Author: Akram Bijapuri
 
 ### Summary/description:
@@ -455,7 +455,7 @@ Author: Akram Bijapuri
 --------------------------------------------------------------------------------
 
 
-## Tree Classification and Regression 
+## Tree Classification and Regression {.tabset}
 Author: Ian Lawson 
 
 ### Summary/description:
@@ -491,7 +491,7 @@ Author: Ian Lawson
 --------------------------------------------------------------------------------
 
 
-## Bagging and Random Forest
+## Bagging and Random Forest {.tabset}
 Author: Witty Wittyngham
 
 ### Summary/description:

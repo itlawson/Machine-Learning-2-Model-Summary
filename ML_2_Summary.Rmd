@@ -254,8 +254,7 @@ to fit to data that does not have a linear relationship.
 Polynomial regression should be used when there is a continuous response variable and one or more continuous features, 
 and there is a nonlinear relationship between the X and Y variables. 
 
-Polynomial regression may also be used to 
-
+Polynomial regression may also be used to estimate a binary response variable, given a set of continuous features. 
 
 ### Model Code and Inputs:
 A polynomial fit can be produced with either orthogonal or non-orthogonal terms. Having orthogonal polynomials means each 
@@ -283,6 +282,14 @@ summary(raw_fit2)
 
 ```
 
+We can also create a polynomial regression model to predict whether a person will earn more than $250,000. To do so,
+we use I() to coerce the continuous wage variable to binary categorical. We then run a glm fit on the model. 
+
+```{r poly_binary_model}
+binary_fit <- glm(I(wage>250)~poly(age, 4), data=Wage, family=binomial)
+```
+
+
 ### Model Tests:
 It is important to choose the lowest-degree model that adequately models the data. To do so, we use the ANOVA (analysis of variance)
 test. ANOVA computes an F-test against two hypotheses: the null hypothesis, which states that a simple model is sufficient 
@@ -304,7 +311,7 @@ anova(fit.1, fit.2, fit.3, fit.4, fit.5)
 Here, we see that the p-values for fits 2 and 3 are less than 0.05, which means the models are significant. However, the p-value for 
 fit 4 is 0.051046. This means the fourth model is not significantly better than the third model. Therefore, we should use the third-order model. 
 
-### Model Improvements:
+### Model Predictions
 
 ```{r poly_improve}
 

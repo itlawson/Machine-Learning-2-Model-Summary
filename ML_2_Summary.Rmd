@@ -351,33 +351,67 @@ Author: Andrew Tremblay & Thomas Trankle
 Author: Emma Harrison
 
 ### Summary/description:
-
+A smoothing spline is a natural cubic spline with a knot at every x. Can achieve perfect fit (RSS of 0) by going through every data point. 
+Want a function that makes RSS small, but keeps the line smooth. Ensure that it’s smooth by: minimizing the tuning parameter. 
 
 ### When to employ this method/model:
-
-
+One of the 4 non-linear model options. 
+lots of flexibility
+lots of degrees of freedom (one @ each knot = sample size n)
 
 ### Model Code and Inputs:
 
 ```{r}
+(9) Now let's fit smoothing splines with cross-validation
+regression_fit=smooth.spline(x,y,df=12)   #use the first fit to set df
+smooth_fit=smooth.spline(x,y, cv=TRUE)  #fits the training data with LOOCV
+df= Degrees of freedom
+cv= cross validation
+(10) Display number of degrees of freedom in the cross-validated smoothing spline.
+smooth_fit$df   #df produces splines at uniform knots
 
 ```
 
 ### Model Tests:
 
 ```{r}
+(11) Use the best model to predict y-values for the 50 new x's from step (7) above
+ylims=range(y)
+vector1<-seq(from=ylims[1],to=ylims[2], length.out = 50)
+Visually inspect the plot of predicted values against X values
+(12)	Plot the full sample's x's and y's.
+xlims=range(x)
+plot(x,y,xlim=xlims, ylim=ylims,cex=.5,col="darkgrey")
+title("Smoothing Spline")
 
 ```
 
 ### Model Improvements:
 
 ```{r}
-
+N/A... would just use a different model
 ```
 
 ### Comprehensive Example:
 
 ```{r}
+> library(splines)
+> fit=lm(wage∼bs(age ,knots=c(25,40,60) ),data=Wage)
+> pred=predict (fit ,newdata =list(age=age.grid),se=T)
+> plot(age ,wage ,col="gray")
+> lines(age.grid ,pred$fit ,lwd=2)
+> lines(age.grid ,pred$fit +2*pred$se ,lty="dashed ")
+> lines(age.grid ,pred$fit -2*pred$se ,lty="dashed ")
+> fit2=lm(wage∼ns(age ,df=4),data=Wage) 
+> pred2=predict (fit2 ,newdata=list(age=age.grid),se=T)
+> lines(age.grid , pred2$fit ,col="red",lwd=2)
+> plot(age ,wage ,xlim=agelims ,cex =.5,col=" darkgrey ") 
+> title("Smoothing Spline ") > fit=smooth .spline(age ,wage ,df=16) 
+> fit2=smooth.spline (age ,wage ,cv=TRUE) 
+> fit2$df
+> lines(fit ,col="red",lwd =2)
+> lines(fit2 ,col="blue",lwd=2) 
+> legend ("topright ",legend=c("16 DF" ,"6.8 DF"), col=c("red","blue"),lty=1,lwd=2, cex =.8)
 
 ```
 --------------------------------------------------------------------------------

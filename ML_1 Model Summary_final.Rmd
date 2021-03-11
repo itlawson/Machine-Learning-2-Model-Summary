@@ -1,0 +1,800 @@
+---
+title: "ML_1 Model Summary"
+author: "Ian Lawson & Carrington Metts"
+date: "11/11/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Part 1: Prediction
+
+# Simple Linear Regression
+
+### General Description
+Simple linear regression is used to predict linear data.  The data need to follow 
+a linear pattern in order to be useful. The model give the equation for a line ie
+y = m*x + b where m is the slope and b is the y intercept.  This is the most basic
+form of regression. 
+
+### When to Use It
+Use simple linear regression when you data appears to be linear (looks like a line)
+and you have 1 independent variable and 1 dependent variable. 
+
+### Modeling Functions
+linear model function:
+model<-lm(dependent_var~independent_var, data=your_data)
+
+### Modeling Function Example
+```{r}
+#load data
+data('longley')
+#create model
+lmEcon<-lm(Employed~Population,longley)
+```
+
+### Assumptions and Tests
+In summary, the assumptions for linear regression are:
+1. Linearity of the data
+2. Significance of the model (p values and R^2)
+3. Lack of highly influential outliers
+4. Normality of residuals
+5. Homoscedasticity
+
+#### Linearity of Data
+First it's a good idea just to plot the data to see if it is linear. Use:
+plot(dependent_var~independent_var, your_data)
+
+#### Significance of Model
+After making your model, look at the summary of the model. First, the p-values needs
+to be below 0.05 for the model to pass.  If this is not met, the model need to be 
+adjusted (remove outliers or don't use this type of model). Next, look at the R^2
+values.  They show the percentage of the variability of the data that is explained
+by the relationship of the dependent and independent variables.  Generally, the 
+higher the R^2 value, the better.  Adjusted R-squared is used when the data is from 
+a small sample size. With large datasets, the R-squared and adjusted R-squared 
+should be nearly equal. 
+
+#### Influential Outliers
+Next, plot the linear model using plot(model).  The first and third plots (Residuals 
+vs Fitted and Scale-Location) ideally will not have any type of pattern.  They will 
+just look like a random set of points. Particularly, funnel shapes are a bad indicator. 
+(In particular, a funnel shape may indicate heteroscedasticity.)
+The second plot, Normal Q-Q should have points that follow the line on the plot. 
+Points that deviate can be considered outliers and if there is to much deviation,
+linear regression may not be the optimal model.  The last plot shows any Cook's 
+Distance issues.  Points that fall outside of the limits shown in the graph are
+highly influential and can be considered outliers.  These points should be investigated.
+
+Cook's distance should be tested for next.  This is done by using:
+plot(model, which = c(4))
+Cook's distance is violated when values are greater than 4/N where N is the number
+of data points.  This is not a hard rule, and plot four above can also be used. 
+Any violating data points should be investigated.
+
+#### Normality of Residuals
+A histogram of the residuals should be plotted to check for normality.  If the histogram
+appears to be normal, then it passes.  If not, outliers should be investigated and/or
+a new model should be considered.  This histogram can be made using:
+hist(model$residuals)
+
+#### Homoscedasticity
+Last, homoscedasticity should be checked using BP test.  If the model passes this 
+test (p-value is less than 0.05), then it is heteroscedastic and the model should
+be reconsidered. To run this test use:
+lmtest::bptest(model)
+
+In many cases, heteroscedasticity can be fixed by taking the log of the dependent
+variable. Use:
+model <- lm(log(dependent_var)~independent_var, data=your_data)
+If this transformation is done, all other assumptions must be rechecked with the
+new model. 
+
+If these test and assumptions are not met, investigate outliers. If outliers cannot
+be removed, seek another type of model for the data.
+
+### Assumptions and Tests Example
+```{r}
+#get the summary
+summary(lmEcon)
+#plot the data
+plot(Employed~Population,longley)
+#add the regression line
+abline(lmEcon)
+
+#look at linear model plots
+par(mfrow=c(2,2)) ## optional way to view charts
+plot(lmEcon)
+
+par(mfrow=c(1,1))
+#plot cooks distance in better method
+plot(lmEcon,which = c(4))
+
+#test normality of errors
+hist(lmEcon$residuals)
+
+#run test for homoscedasticity
+lmtest::bptest(lmEcon)
+
+```
+
+### Outlier Investigation
+If any outliers exist, they should be investigated.  If it appears that the data 
+point is an abnormality and would not help in predicting future data, the point may 
+be removed.  Outliers should be removed one at a time.  Each time one is removed,
+the entire model should be rerun and all the assumptions and tests should be redone.
+If all the tests and assumptions pass, verify that the model itself improves.  The 
+model's overall p-value should decrease and/or r-squared should increase.  If this 
+does not happen, if the value changes are very small, or if the model gets worse,
+it is best to leave them in the model.  
+
+
+
+
+
+# Multiple Linear Regression
+
+### General Description
+Multiple linear regression is used to predict linear data.  The data need to follow 
+a linear pattern in order to be useful. The model give the equation for a line ie
+y = m1*x1 + m2*x2 ... mn*xn + b where n is the number of independent variables, 
+m is the slope, and b is the y intercept.  
+
+### When to Use It
+Use multiple linear regression when you data appears to be linear and there are multiple
+independent variables. 
+
+### Modeling Functions
+linear model function:
+model<-lm(dependent_var~independent_var1+independent_var2+...+independent_varn, data=your_data)
+
+### Modeling Function Example
+```{r}
+#load data
+adv<-read.csv('Advertising.csv')
+
+#build regression object
+lmAdv<-lm(sales~TV + radio,data = adv)
+#note: ~. can be used to represent all other variables instead of typing them out
+```
+
+### Assumptions and Tests
+In summary, the assumptions for multiple linear regression are:
+1. Linearity of data 
+2. Significance of the model
+3. Lack of highly influential outliers
+4. Normality of residuals
+5. Homoscedasticity
+6. Multicollinearity 
+
+#### Linearity of Data
+First it's a good idea just to plot the data to see if it is linear. Use:
+library(scatterplot3d)
+scatter<-scatterplot3d(your data[,c(columns_you_want)],color = 'blue',angle = 50,type = 'h')
+scatter$plane3d(model)
+This technique only really works with 2 independent variables, since it's 
+notoriously difficult to perceive more than 3 spatial dimensions.
+
+#### Significance of Model
+After making your model, look at the summary of the model. First, the p-values needs
+to be below 0.05 for the model to pass.  If this is not met, the model need to be 
+adjusted. To adjust, try removing the independent variable with the highest p-value.
+Rerun the model and try again until all p-values are acceptable. Next, look at the R^2
+values.  They show the percentage of the variability of the data that is explained
+by the relationship of the dependent and independent variables.  Generally, the 
+higher the R^2 value, the better.  Adjusted R-squared is used when the data is from 
+a small sample size and the the other is used with lots of data.
+
+#### Highly Influential Outliers
+Next, plot the linear model using plot(model).  The first and third plots (Residuals 
+vs Fitted and Scale-Location) ideally will not have any type of pattern.  They will 
+just look like a random set of points. Particularly, funnel shapes are a bad indicator. 
+The second plot, Normal Q-Q should have points that follow the line on the plot. 
+Points that deviate can be considered outliers and if there is to much deviation,
+linear regression may not be the optimal model.  The last plot shows any Cook's 
+Distance issues.  Points that fall outside of the limits shown in the graph are
+highly influential and can be considered outliers.  These points should be investigated.
+
+Cook's distance should be tested for next.  This is done by using:
+plot(model, which = c(4))
+Cook's distance is violated when values are greater than 4/N where N is the number
+of data points.  This is not a hard rule, and plot four above can also be used. 
+Any violating data points should be investigated.
+
+#### Normality of Residuals
+A histogram of the residuals should be plotted to check for normality.  If the histogram
+appears to be normal and centered at 0, then it passes.  If not, outliers should 
+be investigated and/or a new model should be considered.  This histogram can be made using:
+hist(model$residuals)
+The mean of the residuals can be checked using:
+mean(model$residuals)
+
+#### Homoscedasticity
+Homoscedasticity should be checked using BP test.  If the model passes this 
+test (p-value is less than 0.05), then it is heteroscedastic and the model should
+be reconsidered. To run this test use:
+lmtest::bptest(model)
+
+#### Multicollinearity 
+Last, VIF should be tested. Any scores that the test returns that are higher than
+10 fail the model.  This can be tested for using:
+car::vif(model)
+
+If these test and assumptions are not met, investigate independent variables and 
+outliers. Remove the independent variables one by one until the model passes.  If 
+that does not work, try removing outliers one by one. If outliers cannot be removed, 
+seek another type of model for the data.
+
+### Assumptions and Tests Example
+```{r}
+#get the summary
+summary(lmAdv)
+#plot the data
+library(scatterplot3d)
+scatter<-scatterplot3d(adv[,c(2,3,5)],color = 'blue',angle = 50,type = 'h')
+#add the regression plane
+scatter$plane3d(lmAdv)
+
+#look at linear model plots
+par(mfrow=c(2,2)) ## optional way to view charts
+plot(lmAdv)
+
+par(mfrow=c(1,1))
+#plot cooks distance in better method
+plot(lmAdv,which = c(4))
+
+#test normality of errors
+hist(lmAdv$residuals)
+
+#run test for homoscedasticity
+lmtest::bptest(lmEcon)
+
+#test VIF
+car::vif(lmAdv)
+
+```
+
+### Outlier Investigation
+If any outliers exist, they should be investigated.  If it appears that the data 
+point is an abnormality and would not help in predicting future data, the point may 
+be removed.  Outliers should be removed one at a time.  Each time one is removed,
+the entire model should be rerun and all the assumptions and tests should be redone.
+If all the tests and assumptions pass, verify that the model itself improves.  The 
+model's overall p-value should decrease and/or r-squared should increase.  If this 
+does not happen, if the value changes are very small, or if the model gets worse,
+it is best to leave them in the model.  
+
+
+
+
+
+# Linear Regression with Interaction
+
+### General Description
+Linear regression with interaction is used to predict linear data.  The data need 
+to follow a linear pattern in order to be useful. The model give the equation for 
+a line ie y = m1*x1*x2 + m2*x1 + m3*x2 ... + b. This differs from the cases above 
+because the interacting terms are multiplied by each other and also have their own
+slope associated with them.  
+
+### When to Use It
+Use linear regression with interaction when you data appear to be linear, you 
+have multiple independent variables, and it looks like variables may interact. 
+
+### Modeling Functions
+linear model function:
+model<-lm(dependent_var~interact_var1*interact_var2..., data=your_data)
+
+### Modeling Function Example
+```{r}
+#load data
+can<-read.csv('cancer_reg.csv')
+#build the model
+lmcancer3<-lm(target_deathrate~incidencerate * pctmarriedhouseholds, data = can)
+summary(lmcancer3)
+```
+
+### Assumptions and Tests
+
+The assumptions and tests for linear regression with interaction are exactly the 
+same as the assumptions and test for multiple linear regression.  See the above 
+sections for this information. 
+
+
+
+# Nonlinear Transformation Regression
+
+### General Description
+Nonlinear transformation regression is used to transform nonlinear variables into
+linear variables so that linear regression can be preformed.  The equation for this
+follows what every polynomial equation best fits the data. The transformation can 
+take place on both independent and dependent variables. It usually transforms polynomials
+or exponential data. 
+
+### When to Use It
+Use this type of regression when the data appears to be nonlinear. This can be seen
+when graphing the data if it is within visual dimensions. 
+
+### Modeling Functions
+linear model function:
+model<-lm(dependent_var~poly(interact_var,polynomial_degree), data=your_data)
+or
+model<-lm(log(dependent_var)~log(interact_var), data=your_data)
+or
+model<-lm(dependent_var~log(interact_var), data=your_data)
+
+### Modeling Function Example
+```{r}
+#load data
+lifeexp<-read.csv('lifeexp2015.csv')
+lifeexp <- na.omit(lifeexp)
+
+#build the model
+#model quad 
+lmlifeQuad<-lm(Life.expectancy~poly(BMI,2),data=lifeexp)
+summary(lmlifeQuad)
+
+#cubic model
+lmlifeCube<-lm(Life.expectancy~poly(BMI,3),data=lifeexp)
+summary(lmlifeQuad)
+
+#quartic model
+lmlifeQuart<-lm(Life.expectancy~poly(BMI,4),data=lifeexp)
+summary(lmlifeQuad)
+
+#log independent model
+lmlifelog_i<-lm(Life.expectancy~log(BMI),data=lifeexp)
+summary(lmlifelog_i)
+
+#log both model
+lmlifelog_b<-lm(log(Life.expectancy)~log(BMI),data=lifeexp)
+summary(lmlifelog_b)
+
+```
+
+### Assumptions and Tests
+
+The assumptions and tests for nonlinear regression are exactly the same as the 
+assumptions and test for multiple linear regression.  See the above sections for 
+this information. 
+
+
+
+
+********
+# Part 2: Classification
+The second part of the course focuses on classification problems. That is,
+these models allow you to predict the category of a given observation based on
+past observations. For classification problems, the dependent variables (and 
+many of the independent variables) are categorical instead of continuous. 
+Classification techniques can also be used to predict the probability that a 
+given observation belongs in each of the available categories. 
+
+# Training and Testing Sets
+Classification models are generally created using a fraction of the dataset
+(the training set) and the accuracy is assessed using the remaining data (the test set).
+The createDataPartition function in the caret library is used to split the data. 
+
+### Testing and Training Example
+```{r}
+library(caret)
+library(dplyr)
+library(rattle)
+data(wine)
+divideData <- wine$Type %>% createDataPartition(p=.8,list = FALSE)
+train <- wine[divideData, ]
+test <- wine[-divideData, ]
+```
+The model can then be created using data=train. The accuracy can be assessed with 
+the test set. 
+
+# Logistic Regression
+
+### General Description
+Logistic regression is the simplest form of classification, in which one or more
+observations are used to predict a binary categorical outcome. For example, 
+banks may use logistic regression to predict whether a customer will default on a loan.
+The equation describing probability is:
+b0 + b1*x = log((p(X)/(1-p(X)))),
+where p(X) = Pr(Y=1 | X)
+
+
+### When to use it
+Logistic regression should be used when the dependent variable is binary categorical
+(that is, yes or no). The independent variable(s) may be categorical or continuous.
+
+### Modeling Functions
+To create a logistic regression model:
+model <- glm(dependent~independents, family=binomial, data=train)
+
+To get the coefficients:
+exp(coef(model))
+
+To find probabilities of falling into a category:
+probs <- predict(model, test, type='response')
+preds <- ifelse(probs>0.5, 'Yes', 'No')
+
+
+### Modeling Function Example
+```{r}
+library(mlbench)
+data('PimaIndiansDiabetes2')
+PimaIndiansDiabetes2 <- na.omit(PimaIndiansDiabetes2)
+divideData <- createDataPartition(PimaIndiansDiabetes2$diabetes, p=.8, list=FALSE)
+train <- PimaIndiansDiabetes2[divideData, ]
+test <- PimaIndiansDiabetes2[-divideData, ]
+
+model <- glm(diabetes~., data=train, family=binomial)
+
+probabilities <- predict(model, test, type='response')
+pred <- ifelse(probabilities>0.5, 'pos', 'neg')
+mean(pred==test$diabetes) #testing accuracy rate
+mean(pred!=test$diabetes) #testing error rate
+table(pred, test$diabetes) 
+```
+
+### Assumptions and Tests
+In summary, the assumptions for logistic regression are:
+1. Linearity of the logit
+2. Absence of multicollinearity (with multiple independent variables)
+3. Lack of strongly influential outliers
+4. Independence of errors
+5. Significant Observations
+When making models, it is best to create the model with the entire dataset, 
+test for assumptions, then split the dataset into testing and training groups
+and determine the accuracy. 
+
+#### Linearity of the Logit
+The plot of the dependent variable versus the logit should be linear. In other
+words, the interaction between each independent numeric variable and its log 
+should be insignificant. 
+
+#### Absence of multicollinearity
+Just like in multiple linear regression, use:
+car::vif(model)
+If any scores are greater than 10, there are some collinear variables and the 
+assumption is not passed. Try removing some of the offending variables and 
+rerunning the model. 
+
+#### Lack of Strongly Influential Outliers
+As in linear regression, points with a very high Cook's distance should be removed.
+
+#### Independence of Errors
+This assumption is violated if there are repeated observations in the dataset. 
+
+### Significant Observations
+When looking at a summary of the model, all independent variables should have p 
+values less than 0.05. If not, try removing that variable and recalculating the
+error rate. NOTE: insignificant observations may be left in the final model if 
+that yields a better error rate. 
+
+### Assumptions and Tests Example
+``` {r}
+library(tidyverse)
+data('PimaIndiansDiabetes2')
+#omit missing values
+PimaIndiansDiabetes2 <- na.omit(PimaIndiansDiabetes2)
+
+#make model, probs, predictions
+model <- glm(diabetes~., data=PimaIndiansDiabetes2, family=binomial)
+probabilities <- predict(model, PimaIndiansDiabetes2, type='response')
+pred <- ifelse(probabilities>.5, 'pos', 'neg')
+
+#Linearity of logit: method 1
+Linear <- glm(diabetes~age*log(age), family=binomial, data=PimaIndiansDiabetes2)
+summary(Linear)
+#The interaction is nonsignificant, so the assumption is passed for age)
+#This should be repeated for all numeric variables
+
+#Linearity of logit: method 2 (plot all variables at once)
+numericalData <- select_if(PimaIndiansDiabetes2, is.numeric)
+predictors <- colnames(numericalData) #pull column names for numeric data
+numericalData <- numericalData %>% mutate(logit=log(probabilities/(1-probabilities))) %>%
+  gather(key='predictors', value='predictor.value', -logit)
+ggplot(numericalData, aes(logit, predictor.value)) + geom_point(size=.5) + 
+  geom_smooth() + facet_wrap(~predictors, scale='free_y')
+#All of the plots should be more or less linear
+
+#Multicollinearity
+car::vif(model)
+
+#Influential Outliers
+modelResults <- broom::augment(model) %>% mutate(index=1:n())
+ggplot(modelResults, aes(index, .std.resid)) + geom_point(aes(color=diabetes))
+ggplot(modelResults, aes(index, .cooksd)) + geom_point(aes(color=diabetes))
+plot(model, which=c(4))
+#Points with a high Cook's distance are suspect
+```
+
+
+# Linear Discriminant Analysis (LDA)
+
+### General Description
+Linear discriminant analysis is a form of classification. The distribution of 
+each prediction class X is modeled separately. Bayes is then used to determine
+the probability of Y (Pr(Y|X)). Each centroid and its distribution is then used
+to produce straight boundary lines to separate each class.
+
+### When To Use It
+LDA is most effective when the classes are well separated and each predictor
+follows a normal distribution. Unlike logistic regression, LDA works well with
+small datasets and datasets with more than two response classes. However, it is
+only effective if each outcome group has more observations than predictor variables. 
+The independent variables may be continuous or categorical; the dependent variable
+is categorical. 
+
+### Modeling Functions
+Like other classification models, LDA is generally run on a training dataset and
+tested on a test set. Data should be centered and scaled before applying LDA. 
+
+To center and scale:
+preprocessing<-train %>% preProcess(method=c('center','scale'))
+traintransformed<-preprocessing %>% predict(train)
+testtransformed<-preprocessing %>% predict(test)
+
+To create the model: 
+model <- lda(dependent~independent, data=your_data)
+
+To make predictions: 
+preds <- predict(model)
+preds$class
+
+### Modeling Function Example
+```{r}
+library(rattle)
+library(MASS) #lda function is in MASS
+data(wine)
+attach(wine)
+
+divideData<-Type %>% createDataPartition(p=.8,list = F)
+train<-wine[divideData,]
+test<-wine[-divideData,]
+
+preprocessing<-train %>% preProcess(method=c('center','scale'))
+traintransformed<-preprocessing %>% predict(train)
+testtransformed<-preprocessing %>% predict(test)
+
+model<-lda(Type~.,data=traintransformed)
+
+#make predictions on test group
+prediction<- model %>% predict(testtransformed)
+
+#calculate the accuracy rate
+mean(prediction$class == testtransformed$Type)
+#calculate the error rate
+mean(prediction$class != testtransformed$Type)
+# make prediction table
+table(prediction$class, testtransformed$Type)
+
+#plot the data from the model
+ldaforgraph<-cbind(traintransformed,predict(model)$x)
+ggplot(ldaforgraph, aes(LD1,LD2)) +geom_point(aes(color=Type))
+```
+
+### Assumptions and Tests
+The assumptions for LDA are:
+1. No strongly influential outliers
+2. Multivariate normality
+3. Lack of multicollinearity
+4. Homoscedasticity
+5. Independence of observations (no repeated observations)
+6. Normality of LD functions
+
+Refer to the multiple linear regression section for detailed explanations and 
+examples of these assumptions. For LDA, these assumptions may be violated; it
+is most important to consider the overall error rate of the model.
+
+### Assumptions and Tests Example
+Most of the assumptions are summarized in the multiple linear regression section.
+One LDA-specific assumption is that the linear discriminant functions (LD1, LD2, etc)
+should be normal.
+
+```{r}
+wine_lda<-lda(Type~.,data=wine)
+wine_lda_values<-predict(wine_lda)
+ldahist(data=wine_lda_values$x[,1], g=wine$Type)
+ldahist(data=wine_lda_values$x[,2], g=wine$Type)
+```
+
+
+# Quadratic Discriminant Analysis (QDA)
+
+### General Description
+QDA is essentially the same as LDA except that the lines it uses to separate groups
+are not linear.  This can help improve the model accuracy over LDA, but it also requires
+more data, and can potentially lead to over-fitting. It also removes some of the 
+plotting and visualization potential that is seen in LDA. 
+
+### When To Use It
+When performing discriminant analysis, it is common to create an LDA model, a QDA 
+model, and a KNN model. The model with the highest accuracy rate is selected. 
+Just like for LDA, the data should be centered and scaled before applying the model.
+
+### Modeling Functions
+The functions for centering and scaling and making predictions are the same as for LDA.
+To make the model:
+model<-qda(Type~.,data=traintransformed)
+
+### Modeling Function Examples
+```{r}
+data(wine)
+attach(wine)
+
+divideData<-Type %>% createDataPartition(p=.8,list = F)
+train<-wine[divideData,]
+test<-wine[-divideData,]
+
+preprocessing<-train %>% preProcess(method=c('center','scale'))
+traintransformed<-preprocessing %>% predict(train)
+testtransformed<-preprocessing %>% predict(test)
+
+model<-qda(Type~.,data=traintransformed)
+
+#make predictions on test group
+prediction<- model %>% predict(testtransformed)
+
+#calculate the accuracy rate
+mean(prediction$class == testtransformed$Type)
+#calculate the error rate
+mean(prediction$class != testtransformed$Type)
+# make prediction table
+table(prediction$class, testtransformed$Type)
+```
+
+### Assumptions and Tests
+The assumptions for QDA are:
+1. No strongly influential outliers
+2. Multivariate normality
+3. Lack of multicollinearity
+4. Homoscedasticity
+5. Independence of observations (no repeated observations)
+
+Refer to the multiple linear regression section for detailed explanations and 
+examples of these assumptions. 
+
+
+# K Nearest Neighbors 
+
+### General Description
+KNN uses the Bayes classifier to predict the class of a given observation given
+the class of its nearest neighbors. The number of neighbors is given by k; by 
+default, R tests several different values of k and returns the model with the 
+highest accuracy. KNN is an example of a nonparametric technique, since it makes no
+assumptions about the shape of the model.
+
+### When To Use It
+Like LDA and QDA, KNN works on datasets that have some division between categories.
+However, KNN performs better when the boundaries between the categories are 
+jagged or irregular. Generally, it is common practice to create an LDA model, a 
+QDA model, and a KNN model for the same dataset and choose the model with the 
+highest accuracy rate. 
+
+### Modeling Functions
+Split the data into testing and training sets as described in previous sections.
+To make the model (trying N different values of k):
+model<-train(dependent~independent,data=train,method='knn', tuneLength=N, preProcess=c('center','scale'))
+
+To make predictions:
+preds<-predict(knnfit,newdata=test)
+
+
+### Modeling Function Examples
+```{r}
+data("PimaIndiansDiabetes2")
+PimaIndiansDiabetes2 <- na.omit(PimaIndiansDiabetes2)
+divideData<-createDataPartition(PimaIndiansDiabetes2$diabetes, p=.8,list=F)
+train<-PimaIndiansDiabetes2[divideData,]
+test<-PimaIndiansDiabetes2[-divideData,]
+
+### Fit the model with training data
+knnfit<-train(diabetes~.,data=train,method='knn',preProcess=c('center','scale'), 
+              tuneLength=12)
+plot(knnfit)
+knnfit$bestTune #optimal value of k
+
+### make prediction on the test dataset
+knnclass<-predict(knnfit,newdata=test)
+head(knnclass)
+
+### confusion matrix
+confusionMatrix(knnclass,test$diabetes)
+
+### calculate accuracy rate
+mean(knnclass==test$diabetes)
+
+```
+
+### Assumptions and Tests
+There are no assumptions or tests necessary for KNN. 
+
+******
+# Part 3: Validation/Resampling
+
+Resampling is used to refit a model to samples from the training set in order to
+more accurately assess the test set error. The resampling method is used together
+with one of the prediction or classification techniques. Generally, the technique
+that yields the best statistics (highest R^2, lowest MAE/MSE/RMSE) is selected.
+
+# Validation Set Approach
+### General Summary
+In the validation set approach, the dataset is divided into testing and training
+groups (just like for classification models). The model is created with the training
+group and predictions are made using the testing group. There are two major 
+drawbacks to this approach; first, the estimates can be highly variable, depending
+on what points are included in the training set. Second, models perform worse 
+when trained on fewer observations, so excluding the testing set could cause a 
+systematic misestimation of error rates. 
+
+### Validation Set Example
+```{r}
+library(ISLR)
+library(mltools)
+data(Auto)
+divideData <- createDataPartition(Auto$mpg, p=0.75, list=FALSE)
+train <- Auto[divideData, ]
+test <- Auto[-divideData, ]
+lm.fit <- lm(mpg~poly(horsepower, 2), data=train)
+newpred <- predict(lm.fit, newdata=test)
+
+mse <- mse(newpred, test$mpg)
+RMSE <- rmse(newpred, test$mpg)
+RSquare <- R2(newpred, test$mpg)
+mae <- MAE(newpred, test$mpg)
+```
+
+# Leave One Out Cross-Validation (LOOCV)
+### General Summary
+LOOCV seeks to correct the problems introduced by the validation set approach. 
+In LOOCV, one data point is held as the testing set, and the model is trained with
+all remaining points. The process is repeated so each point is held out as the 
+validation point. Although the method reduces bias, it is costly to implement with 
+large datasets. Importantly, it will always yield the same results. 
+
+### LOOCV Example (with linear model)
+``` {r}
+divideData <- createDataPartition(Auto$mpg, p=0.7, list=FALSE)
+train <- Auto[divideData, ]
+test <- Auto[-divideData, ]
+
+trainControl <- trainControl(method='LOOCV')
+LOOCVmodel <- train(mpg~horsepower, data=train, method='lm', trControl=trainControl)
+newpred <- predict(LOOCVmodel, newdata=test)
+
+mse <- mse(newpred, test$mpg)
+RMSE <- rmse(newpred, test$mpg)
+RSquare <- R2(newpred, test$mpg)
+mae <- MAE(newpred, test$mpg)
+```
+
+# K-Fold Cross Validation
+### General Summary
+K-fold CV involves splitting the dataset into k number of subsets. It then sets 
+one subset as the test set and trains the model on the others. This process is 
+repeated k times so each subset serves as the test set. The value of k is usually
+set to 5 or 10. K-fold validation strikes
+a balance between the bias introduced by the validation set approach and the 
+computational intensity of LOOCV. 
+
+### K-Fold Example (with LDA)
+``` {r}
+data('iris')
+divideData <- createDataPartition(iris$Species, p=0.75, list=FALSE)
+train <- iris[divideData, ]
+test <- iris[-divideData, ]
+
+trainControl <- trainControl(method='cv', number=10)
+ldamodel <- train(Species~., method='lda', data=train, trControl=trainControl)
+newpred <- predict(ldamodel, newdata=test)
+mean(newpred==test$Species) #accuracy rate
+confusionMatrix(newpred, test$Species) #confusion matrix
+table(newpred, test$Species)
+```
+
+
+
+
+
+
+

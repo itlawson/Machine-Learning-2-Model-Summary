@@ -212,33 +212,105 @@ Author: Alex King
 
 ### Summary/description:
 
+Principal Components Analysis (PCA): Popular Algorithm for deriving a low-dimensional set of features from a large set of features from a large set of variables. This is done by transforming X features through linear combinations
+	
+There are two methods:
+
+Principal Components Regression/Analysis
+Partial Least Squares
+
+Both involve supervised regression of Y on components. However, PCR is the unsupervised identification of components in the X feature space, while PLS is supervised.
+
+PLS and PCR have very similar performances.
+
+
 
 ### When to employ this method/model:
 
+Uses: 
+1) When there are more variables than observation (wide data)
+Shopping Behavior (Y) and Searh Keywords
+2) When the explanatory variables are highly correlated
+3) Use PLS when you want to reduce bias
+
+Potential Drawbacks: There is no guarantee that the selected principal components are associated with the outcome. If there is no correlation with the variables, you will run into trouble. PLS can also increase variance
 
 
 ### Model Code and Inputs:
+Library: PLS
 
-```{r}
+PCR: pcr(Y~X, data=DF,scale=TRUE,validation= “cv”)
+PLS: plsr(Y~X,data=df,scale=TRUE,validation= “cv”)
 
-```
 
 ### Model Tests:
 
-```{r}
+ For the model tests, we will use the Validation Plot Function. This function allows you to graph show the Mean Square Error of Prediction versus the # of Components. You will choose the number of components that has the lowest MSEP.
 
-```
+validationplot(pcr.fit, val.type="MSEP")
+
 
 ### Model Improvements:
-
-```{r}
-
-```
+Adjust nComp which is the number of principal components to build the models for. Adding Scale = True
 
 ### Comprehensive Example:
 
 ```{r}
+#### PCR
 
+### Step 1: Load Require Packages
+library(tidyverse)
+library(caret)
+library(pls)
+
+### Step 2: Load Data Set the Data
+library(MASS)
+data("Boston")
+str(Boston)
+
+### Step 3: Split Dataset
+set.seed(123)
+training.indices <- Boston$medv %>% createDataPartition(p=0.8,list=FALSE)
+train <- Boston[training.indices,]
+test <- Boston[-training.indices,]
+y.test <- test$medv
+
+### Step 4: Compute PCR
+
+# Build Model
+model <- pcr(medv~.,data=Boston,subset=training.indices,scale=TRUE,validation="CV")
+summary(model)
+
+validationplot(model,val.type = "MSEP")
+
+
+### Calculate Lowest MSE
+pcr.pred = predict(model,test,ncomp=13)
+mean((pcr.pred-y.test)^2)
+# MSE = 21.05844
+
+### Test on whole Dataset
+model.whole <- pcr(medv~.,data=Boston,scale=TRUE,validation="CV")
+pcr.pred = predict(model.whole,test,ncomp=13)
+mean((pcr.pred-y.test)^2)
+# MSE = 19.934
+
+##### PLS
+### Steps 1-3 Same as PCR
+pls.fit <- plsr(medv~.,data=Boston,subset=training.indices, scale=TRUE,validation="CV")
+summary(pls.fit)
+
+validationplot(pls.fit,val.type="MSEP")
+
+pls.pred <- predict(pls.fit,test,ncomp=8)
+mean((pls.pred-y.test)^2)
+# MSE = 20.95983
+
+### Whole Dataset
+pls.whole <- plsr(medv~.,data=Boston, scale=TRUE,validation="CV")
+pls.pred <- predict(pls.whole,test,ncomp=8)
+mean((pls.pred-y.test)^2)
+# MSE = 19.90098
 ```
 --------------------------------------------------------------------------------
 

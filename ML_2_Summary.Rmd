@@ -391,7 +391,7 @@ points(jitter(Wage$age), I((Wage$wage >250)/5),cex=.5,pch ="|", col="darkgrey")
 lines(age.grid ,pfit ,lwd=2, col ="blue")
 matlines (age.grid ,se.bands ,lwd=1, col="blue",lty=3)
 
-````
+```
 
 
 
@@ -416,7 +416,7 @@ The points where the coefficients change are called *knots*.
 
 In general, if we place *K* different knots throughout the range of *X*, then we
 will end up fitting *K + 1* different polynomials.
-```{r, echo = F}
+```{r, echo = F, cache=T}
 knitr::include_graphics("./regKnots.png")
 ```
 
@@ -426,7 +426,7 @@ degree of freedom.
 
 Remember, there are degrees of freedom for the entire model(Total DF) and the 
 specified degrees of freedom for the polynomial (df).
- df = degree + knots
+$$df = degree + knots$$
 ```{r, eval = F}
 # Using the bs() function
 bs(x , df = NULL, knots = NULL, degree = 3 #default
@@ -434,7 +434,7 @@ bs(x , df = NULL, knots = NULL, degree = 3 #default
 ```
 
 \centering
-Total DF = 1 + df = 1 + degree + knots
+$$\textit{Total DF} = 1 + df = 1 + degree + knots$$
 
 ### When to employ this method/model:
 
@@ -452,14 +452,84 @@ Using more knots leads to a more flexible piecewise polynomial.
 ### Model Code and Inputs:
 
 ```{r}
+library(ISLR)
+library(splines)
+library(boot)
+```
 
+To generate a regression spline, we use the bs() function from the *spline* package.
+```{r, message=F}
+# To ensure the data is inputted, we advise attaching the data
+attach(Wage)
+
+# generally, we need to either specify the df or number of knots
+#bs(age, df = NULL, knots = NULL, degree = 3, intercept = FALSE,
+#   Boundary.knots = range(x)) 
+
+# The following code outlines fitting wage to age using a regression spline
+# by defining the number of knots
+regression.spline <- glm(wage ~ bs(age,
+                                 knots=c(25,40,60))) #knot argument specifies 
+                                                     #specific knot locations
+                                                     # on axis
+
+# If you don't know where to create the knots but know you want 3 knots in your
+# model, then specify df and knot locations will be automatically generated.
+regression.spline <- glm(wage~bs(age, df = 6)) #6 was used as default degree = 3 
+                                               # df = degree + knots
+                                               # 6= 3 + knots
+
+#You cannot use knots to specify number of knots directly
+# lm(Y ~ bs(X, knots=3) # error – will not give you 3 knots
+
+# The Total DF for this model is 7
 ```
 
 ### Model Tests:
 
-```{r}
+What is the best degree for our polynomial and how many knots should we use, or equivalently how many degrees of
+freedom should our spline contain? One option is to try out different numbers of knots and see which produces the best looking curve. A somewhat
+more objective approach is to use cross-validation.
 
+There are two steps for this.
+
+1.) Polynomial degree determination for our data using CV
+```{r, message=F}
+mse.error <- rep(0,12)
+set.seed(5082)
+for (i in 1:12){
+  regSpline <- glm(wage ~ bs(age, degree = i), data = Wage)
+  mse.error[i] <- cv.glm(Wage, regSpline, K=10)$delta[1]
+}
+
+plot(mse.error, xlab = 'Degrees of Freedom of Cubic Spline',ylab = 'MSE')
+lines(mse.error, type = 'b',lty = 1)
+stdev <- sd(mse.error[2:12])
+abline(h= min(mse.error) + stdev, col = "red", lty = "dashed")
 ```
+
+2.) Now we can use the best degree found above, determine the correct number of 
+knots, if any.
+```{r}
+# METHOD 1 - look for the best model using CV whilst changing knots
+error.vector <- rep(0,12) # create an error vector to store cv results
+
+set.seed(5082)
+for (i in 4:15 ){
+  regression.spline <- glm(wage ~ bs(age, df = i, degree= 4))
+  error.vector[i-3] <- cv.glm(Wage, regression.spline, K = 10)$delta[1] #The default is the average squared error function.(MSE)
+}
+
+# Plot Results 
+
+plot(error.vector, xlab = 'Knots',ylab = '10-Fold CV Percentage Error')
+lines(error.vector, type = 'b',lty = 1)
+stdev <- sd(error.vector[1:12])
+abline(h= min(error.vector) + stdev, col = "red", lty = "dashed")
+```
+So, for a degree-4 polynomial we will choose zero knots because this is the
+most simple model whose CV error, for knots, lies 
+within 1 SD error of the lowest cross validation error point.
 
 ### Model Improvements:
 
@@ -469,9 +539,51 @@ Using more knots leads to a more flexible piecewise polynomial.
 
 ### Comprehensive Example:
 
+AUTO DATA
+```{r, message=FALSE, warning=F}
+library(ISLR)
+attach(Auto)
+error.vector.degree <- rep(0,10)
+set.seed(111)
+# First determine appropriate polynomial degree
+for (i in 1:10 ){
+  regression.spline <- glm(acceleration ~ bs(weight, degree = i), data = Auto)
+  error.vector.degree[i] <- cv.glm(Auto, regression.spline, K=10)$delta[1] 
+}
+```
+
 ```{r}
+plot(error.vector.degree, xlab = 'Degrees of Freedom',ylab = 'MSE')
+lines(error.vector.degree, type = 'b',lty = 1)
+stdev <- sd(error.vector.degree[1:9])
+abline(h= min(error.vector.degree) + stdev, col = "red", lty = "dashed")
 
 ```
+
+We examine the best degree for our model is 4.
+
+```{r, message = F, warning = F}
+error.vector.knots <- rep(0,10) # create an error vector to store cv results
+
+set.seed(222)
+for (i in 1:10 ){
+  regression.spline <- glm(acceleration ~ bs(weight, df = i + 3,degree = 4))
+  error.vector.knots[i] <- cv.glm(Auto, regression.spline, K = 10)$delta[1] 
+}
+```
+
+```{r}
+# Plot Results 
+
+plot(error.vector.knots, xlab = 'Knots',ylab = '10-Fold CV Percentage Error')
+lines(error.vector.knots, type = 'b',lty = 1)
+stdev <- sd(error.vector.knots[1:10])
+abline(h= min(error.vector.knots) + stdev, col = "red", lty = "dashed")
+```
+
+We get two Knots!!!!
+Since the actual knots = Knots (x-axis) - 1
+
 --------------------------------------------------------------------------------
 
 

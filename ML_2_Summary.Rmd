@@ -818,39 +818,248 @@ Author: Ian Lawson
 
 ### Summary/description:
 
+In the simplest terms, trees classification and regression are just methods of decision trees to classify data. Tree classification splits data and the nodes (categories after the splits) categorize data as one category or another. Tree regression does essentially the same thing.  While it's technically regression, each node has a specific value that the model categorizes it as. Splits are made by trying to determine what kind of split will make the most pure node. For example, if you were trying to categorize loan applicants as likely to default on their loan or not, and you realized most people with a credit score below 650 defaulted on their loans, you would make a split at a credit score of 650. The purity of the two nodes you create depend on how mixed the split is. If when you split in the example above and 50 people with scores below 650 default on their loan while only 2 people did not, it would be a fairly pure node. On the other hand, if 26 defaulted and 26 did not, it would be very impure and not a good split. 
+
+There are two ways to determine impurity: find the Gini Impurity, or find the Entropy. Dr. Chung primarily talked about Gini, but a quick note on Entropy: values for Entropy are between 0 and 1 with 0 being a pure node and 1 having the most possible impurity. For Gini, the range is 0 to 0.5 with 0 being pure and 0.5 being the most impure. To calculate the Gini impurity use one minus the sum of the probability squared of each potential classification. To go with our earlier example, the Gini impurity would be 1 - (sum of probability of defaulting)^2 - (sum of probability of not defaulting)^2 Lastly, when making cuts, you look at how much information is gained from the cut. This is the difference in Gini impurity between the parent and child cut. The more information gain, the better the cut. 
+
 
 ### When to employ this method/model:
 
+Generally, Tree Regression and Classification are not the best. Later sections that use bagging and random forest can be decent, but tree methods are very prone to high error rates and overfitting. The value comes from the simplicity of the model. They are very useful when creating a model that's basic for people to understand. Generally, try to avoid using these. 
 
+### Model Code and Inputs for both Regression and Classification:
 
-### Model Code and Inputs:
+```{r,eval = F}
+#tree models use the tree library
+library(tree)
+#models follow the general ~ formula
+model<-tree(y_variable~x_variables,data=your_data)
+#to view the summary
+summary(model)
+#to view a more comprehensive summary
+model
+#to view a plot of the model
+plot(model)
+text(model, pretty=0)
+```
 
-```{r}
+### Model Tests, Classification:
+
+```{r,eval = F}
+#predict using test data
+prediction<-predict(model,test_data,type = 'class')
+#make a confusion matrix
+table(prediction, test_data$y_values)
+#calculate test error using the confusion matrix
+test_error<-number_of_values_correctly_predicted/number_of_all_values
+```
+
+### Model Tests, Regression:
+
+```{r,eval = F}
+#predict using test data (note there is no type='class')
+prediction<-predict(model,test_data)
+#find MSE
+MSE<-mean((prediction - test_data$y_values)^2)
+#find RMSE
+RMSE<-sqrt(mean((prediction - test_data$y_values)^2))
+```
+
+### Model Improvements, Classification:
+
+```{r,eval = F}
+#use cross validation 
+cvModel<-cv.tree(model, FUN = prune.misclass)
+#plot the model and choose the fewest number of nodes within on standard deviation of the node with the lowest error
+plot(cvModel$size,cvModel$dev, type = 'b')
+#remake the model with the best number of nodes
+pruneModel<-prune.misclass(model,best=best_number_of_nodes)
 
 ```
 
-### Model Tests:
+### Model Improvements, Regression:
 
-```{r}
+```{r,eval = F}
+#use cross validation 
+cvModel<-cv.tree(model)
+#plot the model and choose the fewest number of nodes within on standard deviation of the node with the lowest error
+plot(cvModel$size,cvModel$dev, type = 'b')
+#remake the model with the best number of nodes
+pruneModel<-prune.misclass(model,best=best_number_of_nodes)
 
 ```
 
-### Model Improvements:
+### Comprehensive Example, Regression:
+
+Fit the Tree:
+
+We fit a regression tree to the Boston Housing Data, which is available through the MASS package in R studio and include 14 variables and 506 observations.
+First, we split data half and half into training and test sets , then fit the regression tree model on the training data only.
 
 ```{r}
-
+library(tree)
+library(MASS)
+set.seed(1)
+train = sample(1:nrow(Boston), nrow(Boston)/2)
+tree.boston = tree(medv~., Boston, subset = train)
+summary(tree.boston)
 ```
 
-### Comprehensive Example:
+Plot Tree: 
+
+Notice that although the tree grown to full depth has 7 leaves, only four of the variables (rm, lstat, crim and age) have been used to construct this tree. In the context of a regression tree, the deviance is simply the sum of squared errors for the tree. Now, we plot the tree.
 
 ```{r}
+plot(tree.boston)
+text(tree.boston,pretty=0)
+```
 
+The rm variable measures the average number of rooms per dwelling, and the lstat variable measures the percentage of individuals with lower socioeconomic status. The tree shows that higher values of rm correspond to higher house values and lower values of rm correspond to cheap houses.
+
+Preform Cross-Validation: 
+
+Now we use 10-fold cross validation by using cv.tree() function in order to determine the optimal level of tree complexity. This will help us decide whether pruning the tree will improve performance.
+
+```{r}
+cv.boston=cv.tree(tree.boston)
+cv.boston
+```
+
+Plot the Cross-Validation: 
+
+```{r}
+plot(cv.boston$size,cv.boston$dev,type='b')
+```
+
+Through the plot, we can find that the most complex tree is selected by cross-validation. However if we wanted to prune the tree, we would use the prune.tree() function as the following.
+
+Make model by using Best Pruned Tree: 
+
+```{r}
+prune.boston=prune.tree(tree.boston,best=5)
+summary(prune.boston)
+plot(prune.boston)
+text(prune.boston,pretty=0)
+```
+
+Find the Test Error Rate: 
+
+We use the unpruned tree to make predictions on the test set to keep the cross-validation results.
+```{r}
+yhat = predict(tree.boston,newdata=Boston[-train,])
+boston.test = Boston[-train,"medv"]
+plot(yhat, boston.test)
+abline(0,1)
+mean((yhat-boston.test)^2)
+sqrt(mean((yhat-boston.test)^2))
+```
+We got the result that the test set MSE for the regression tree is 35.29, and the square root is around 5.940 which means that this model gives predictions that are within around $5,940 of the true median home value.
+
+### Comprehensive Example, Classification:
+
+Load the Data:
+
+The OJ data contains 1070 purchases where the customer either purchased Citrus Hill or Minute Maid Orange Juice. There are 17 characteristics of the customer and product recorded in the data. The data set is already cleaned as shown in the 'str' function, so no data cleaning is required. 
+
+```{r}
+library(ISLR)
+data(OJ)
+str(OJ)
+```
+
+Split the Data: 
+
+Instead of using the book's method, the data is split using the caret package. The training data contains 80% of the data while the remaining 20% is saved for testing. 
+
+```{r}
+library(caret)
+set.seed(420)
+d_divide<-createDataPartition(OJ$Purchase,p=.8,list = FALSE)
+train<-OJ[d_divide,]
+test<-OJ[-d_divide,]
+```
+
+
+Fit the Model:
+
+To fit the tree classification model, use the tree library. As seen in the model summary, there are 10 terminal nodes and a training error rate of 15.87%.
+
+
+```{r}
+library(tree)
+model<-tree(Purchase~.,data=train)
+summary(model)
+```
+
+Display Detailed Results:
+
+Printing the model shows the break down of each node in the tree. In order it displays the split criterion, the number of observations in that branch, the deviance, the overall prediction for the branch, and the fraction of observations that take on the prediction. It also denotes if a node is a terminal node or not. 
+
+```{r}
+model
+```
+
+Plot the Tree:
+
+Plotting the tree shows a visualization of the different branches in the tree. It does not go as in-depth as printing the model, but it does show the split criteria. 
+
+```{r}
+plot(model)
+text(model,pretty = 0)
+```
+
+Use the Test Data and Create a Confusion Matrix:
+
+Using the test data to make a prediction yields a test error rate of 16.9%. This is slightly higher than the training error rate, which is generally expected. There were 36 misclassifications and 177 valid classifications.  
+
+```{r}
+prediction<-predict(model,test,type = 'class')
+table(prediction, test$Purchase)
+cat("Test Error Rate:",toString((26+10)/length(test$Purchase)))
+```
+
+Use Cross Validation to Find Optimal Tree Size:
+
+To cross validate the tree model, the cv.tree function is used. Setting FUN to prune.misclass ensures that the training error rate is used as the criteria for model improvement. Displaying the results of the model shows the deviation at each number of terminal nodes. 
+
+```{r}
+cvModel<-cv.tree(model, FUN = prune.misclass)
+cvModel
+```
+
+Plot the CV Results:
+
+Plotting the cross validation results shows that using 4 terminal nodes yields the smallest deviation/error rate for the model. This differs from our original model that used 10 terminal nodes. Not only is the error rate lower, less nodes and branches means there is a lower chance of overfitting. 
+
+```{r}
+plot(cvModel$size,cvModel$dev, type = 'b')
+```
+
+Make a Model Using the Best Pruned Tree:
+
+Using the number of terminal nodes found above, a pruned model is created using the prune.misclass function. The plot shows the branches for a 4 terminal node model. 
+
+```{r}
+pruneModel<-prune.misclass(model,best=4)
+plot(pruneModel)
+text(pruneModel,pretty=0)
+```
+
+Find the New Test Error Rate:
+
+Using the pruned model yields different results from the original model. The training error rate was slightly higher at 18.09% as opposed to the original 15.87%. The test error rate fell by 2.82% from the original test error rate of 16.9% to the pruned test error rate of 14.08%. 
+
+```{r}
+summary(pruneModel)
+prunePred<-predict(pruneModel,test,type = 'class')
+table(prunePred, test$Purchase)
+cat("Test Error Rate:",toString((13+17)/length(test$Purchase)))
 ```
 --------------------------------------------------------------------------------
 
 
 ## Bagging and Random Forest {.tabset}
-Author: Witty
+Author: Itty Bitty Witty
 
 ### Summary/description:
 Bagging, random forests and boosting use trees as building blocks to construct more powerful prediction models.

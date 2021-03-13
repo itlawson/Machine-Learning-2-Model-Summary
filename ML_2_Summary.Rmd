@@ -863,7 +863,7 @@ gam.m2=gam(wage~s(age,5)+year+education ,data=Wage)
 gam.m3=gam(wage~s(age ,5)+s(year,4)+education ,data=Wage)
 anova(gam.m1,gam.m2,gam.m3,test="F")
 
-predWage=unlist(predict(gam.m2,newdata=Wage))
+predWage=unname(predict(gam.m2,newdata=Wage))
 head(Wage$wage);head(predWage)
 
 #There is a significance in choosing the 2nd model as shown in the ftest

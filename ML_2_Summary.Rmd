@@ -850,39 +850,145 @@ Author: Ian Lawson
 
 
 ## Bagging and Random Forest {.tabset}
-Author: Witty Wittyngham
+Author: Witty
 
 ### Summary/description:
+Bagging, random forests and boosting use trees as building blocks to construct more powerful prediction models.
 
+Bagging, also known as bootstrap aggregation, is a general purpose procedure for reducing the variance of a statistical learning model, usually decision trees. Some decision trees, notably in Section 8.1 of the book, suffer from high variance. Bagging helps reduce that variance. 
+
+In bagging, we generate B different bootstrapped training data sets and train our method on the bth training set to get $\hat{f}^{*b} (x)$, and average the predictions. The full formula looks like this:
+
+$\hat{f}_{bag} (x)$=$\frac{1}{B}$ $\sum_{b=1}^{B} \hat{f}^{*b} (x)$
+
+Bagging can be used for regression models, but it is most useful with decision trees.
+
+Something to note - the number of trees $B$ is not a critical parameter with bagging; using a large $B$ will not lead to overfitting.
 
 ### When to employ this method/model:
 
+** For quantitative variables ** : Do above
 
+** For qualitative variables ** : Simplest approach is to record the class predicted by each of the B trees, and take a majority vote: the most common occurring class among B predictions.
+
+To setup our bagging code, we need some initial regression tree code.
 
 ### Model Code and Inputs:
-
 ```{r}
+library(MASS)
+library(randomForest)
+library(tree)
+set.seed(1)
+train = sample(1:nrow(Boston), nrow(Boston)/2)
+tree.boston=tree(medv~.,Boston,subset = train)
+summary(tree.boston)
 
+# Regression Tree
+tree(formula = medv~., data = Boston, subset = train)
+plot(tree.boston)
+text(tree.boston, pretty = 0)
+cv.boston=cv.tree(tree.boston)
+plot(cv.boston$size,cv.boston$dev,type = 'b')
+
+# prune tree
+prune.boston=prune.tree(tree.boston, best = 5)
+plot(prune.boston)
+text(prune.boston, pretty = 0)
+
+# use unpruned tree to make predictions on the test set
+yhat=predict(tree.boston, newdata = Boston[-train,])
+boston.test=Boston[-train,"medv"]
+plot(yhat,boston.test)
+abline(0,1)
+mean((yhat-boston.test)^2)
+
+# Need randomForest package to setup a random forest 
+
+library(randomForest)
+set.seed(1)
+bag.boston=randomForest(medv~.,data = Boston, subset = train, mtry=13, importance=TRUE)
+
+# The argument "mtry=13" lets us know that all 13 predictors should be considered for each split within the tree
+
+bag.boston
+
+# The percentage of variance explained is 85.17%. 
+# B = 500. If argument isn't specified, ntrees will default to 500.
+# The number of variables tried at each split: 13
+## If mtry is not specified, it will default to p/3 for mtry for regression trees and sqrt(6) for classification
 ```
 
 ### Model Tests:
 
 ```{r}
-
+yhat.bag=predict(bag.boston, newdata = Boston[-train,])
+plot(yhat.bag, boston.test)
+abline(0,1)
+mean((yhat.bag-boston.test)^2)
 ```
 
 ### Model Improvements:
 
-```{r}
+A model can be improved by changing the mtry argument and how many variables you want build a random forest on or by altering the amount of trees the forest is made of using the ntrees argument.
 
+```{r}
+set.seed(1)
+rf.boston=randomForest(medv~., data = Boston, subset = train, mtry=6, importance=TRUE, ntrees = 25)
 ```
+
+The dataset that isn't used to train the model is then your "Out-Of-Bag" Sample, or your test dataset. Estimate the accuracy of the random forest using the Out-of-Bag sample.
+
+```{r}
+yhat.rf=predict(rf.boston, newdata = Boston[-train,]) ## newdata is your Out-of-Bag data
+mean((yhat.rf-boston.test)^2)
+```
+
+With the 'importance = TRUE' argument, you can then see which features are most, or least, important to the random forest. Call this using varImpPlot()
+
+```{r}
+varImpPlot(rf.boston)
+```
+
 
 ### Comprehensive Example:
 
-```{r}
+In this exercise, we'll use boosting to predict **Salary** in the Hitters data set.
 
+First thing we want to do is load the dataset and remove any observations where salary is missing.
+
+
+```{r}
+library(MASS)
+library(tree)
+hitters <- ISLR::Hitters
+hitters<-hitters[-which(is.na(hitters$Salary)), ]
+hitters$Salary<-log(hitters$Salary)
+```
+ 
+
+We'll then create a training set consisting of the first 200 hitters, and a test set consisting of the remaining observations.
+
+
+```{r}
+train<-1:200
+hitters.train <- hitters[train,]
+hitters.test <- hitters[-train,]
 ```
 
+Then we use randomForest including all 19 variables. It will default to 500 trees.
 
+```{r}
+library(randomForest)
+set.seed(1)
+bag.hitters= randomForest(Salary~.,data=hitters , subset=hitters.train,
+                            mtry=19,importance =TRUE) #use all 19 variables for bagging
+hitters.test <- hitters[-train ,"Salary"]
+yhat.bag <- predict(bag.hitters , newdata=hitters.test)
+mean((yhat.bag - hitters.test)^2)
+```
 
+Call the varImpPlot to see which variables are most important to this random forest
 
+```{r}
+varImpPlot(bag.hitters)
+```

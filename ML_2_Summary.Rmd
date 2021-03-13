@@ -17,6 +17,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This document is a comprehensive summary for Machine Learning 2. It is intended to help us study for the exams and for future reference in our professional lives (if any companies actually use R).
 
+## Basic Statistics {.tabset}
+Authors: Carrington Metts
+
+### Bias/Variance Tradeoff
+**Variance** is defined as the amount by which a prediction would vary if it were estimated with a different training set. A model with high variance is *overfit*- small 
+changes in the training set may result in large changes to the model. 
+
+**Bias** is defined as the amount of error that is due to reducing a complex real-world dataset to a simple model. A model with high bias is *underfit*- changes in the 
+training set are unlikely to significantly change the model, but the model still does not make good predictions for the data. 
+
+If your training error is low and test error is high, the model has *high variance*. If both the training and testing errors are high, the model has 
+*high bias*. If both the training and testing errors are low, the model has *low variance and low bias*. 
 
 ## Forward and Backward Selection {.tabset}
 Author: Matt Sadosuk

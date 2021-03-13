@@ -1189,11 +1189,10 @@ Then we use randomForest including all 19 variables. It will default to 500 tree
 ```{r}
 library(randomForest)
 set.seed(1)
-bag.hitters= randomForest(Salary~.,data=hitters , subset=hitters.train,
+bag.hitters= randomForest(Salary~.,data=hitters.train,
                             mtry=19,importance =TRUE) #use all 19 variables for bagging
-hitters.test <- hitters[-train ,"Salary"]
 yhat.bag <- predict(bag.hitters , newdata=hitters.test)
-mean((yhat.bag - hitters.test)^2)
+mean((yhat.bag - hitters.test$Salary)^2)
 ```
 
 Call the varImpPlot to see which variables are most important to this random forest

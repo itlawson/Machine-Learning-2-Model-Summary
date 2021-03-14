@@ -1313,8 +1313,8 @@ library(splines)
 library(gam)
 Wage = Wage
 ##I am predicting Wage with:
-### smoothing spline of age with 4 dF (s() is the smoothing spline function)
-### Smoothing spline of year with 4 dF
+### smoothing spline of age with 6 dF (s() is the smoothing spline function)
+### Smoothing spline of year with 6 dF
 ### Education is factor variable but we want to add it, no need to smooth. Step Function is applied.
 levels(Wage$education)
 

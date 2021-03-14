@@ -1117,34 +1117,63 @@ N/A... would just use a different model
 ## Local Regression {.tabset}
 Author: Kayleigh Gillis
 
-### Summary/description:
+### Summary 
+NOTE: Librarys ISLR, splines, game, and akima need to be installed. 
 
+Local regression is an approach for fitting flexible non-linear functions. It involved computing the fit at a target point using a neighborhood of nearby training observations. To obtain the local regression fit at a new point, we need to fit a new weighted least squares regression model. It is someties called memory-based procedure because all of the training data is used each time a prediction is made.
 
-### When to employ this method/model:
+### When to use it 
 
+There are a few choices that are needed to be made. How to define the weighting function K, and whether linear, constant, or quadratic regression should be used. The most important choice is the span (s) which plays the role of a tuning parameter. The smaller the value, the more local the fit will be, the larger the span the more global the fit will be. Cross validation can be used to chose the span, or it can be specified directly. Local regression generalizes naturally when we want to fit models that have a pair of local vairables instead of one. Though too many can cause local regression to preform poorly. 
 
-
-### Model Code and Inputs:
-
+### Example 1:
 ```{r}
+remove(list = ls())
+
+library(ISLR)
+attach(Wage)
+library(splines)
+# Use regression spline to fit wage to age
+fit = lm(wage ~ bs(age, knots = c(25, 40, 60)), data = Wage)
+
+# bs function generates entire matrix of basis functions for splines w #specified set of knots 
+agelims = range(Wage$age)
+
+# Grid of values for age that we want predictions
+age.grid=seq(from=agelims [1],to=agelims [2])
+
+# To preform local regression, use the loess() function 
+plot(age, wage, xlim = agelims, cex = 0.5, col = "darkgrey")
+title("Local Regression")
+fit = loess(wage~age, span = 0.2, data = Wage)
+fit2 = loess(wage~age, span = 0.5, data = Wage)
+lines(age.grid ,predict (fit ,data.frame(age=age.grid)),
+      col="red",lwd=2)
+lines(age.grid ,predict (fit2 ,data.frame(age=age.grid)),
+        col="blue",lwd=2)
+legend ("topright ",legend=c("Span=0.2"," Span=0.5"),
+          col=c("red","blue"),lty=1,lwd=2, cex =.8)
+
 
 ```
 
-### Model Tests:
-
+### Example 2
 ```{r}
+# Local Regression as building blocks with GAM using lo()
+library(gam)
+gam.lo = gam(wage~s(year, df = 4) + lo(age, span = 0.7) + education, 
+             data = Wage)
+plot(gam.lo, se = TRUE, col = "green")
+# We have used local regression on the age term with a span of 0.7
+# The lo() function can create interactions before galling the gam() function 
 
-```
+gam.lo.i = gam(wage~lo(year, age, span = 0.5)+education, data = Wage)
+# This fits a 2 term model. The first term is an interaction between year and age, by a local regression surface. 
 
-### Model Improvements:
+## Plot the resulting 2 dim surface
+library(akima)
+plot(gam.lo.i)
 
-```{r}
-
-```
-
-### Comprehensive Example:
-
-```{r}
 
 ```
 --------------------------------------------------------------------------------

@@ -707,32 +707,150 @@ matlines (age.grid ,se.bands ,lwd=1, col="blue",lty=3)
 
 --------------------------------------------------------------------------------
 
-## Step Functions {.tabset}
+### Step Functions
 Author: Alex Russett
-### Summary/description:
 
-### When to employ this method/model:
+#Summary and Description
+
+In general **step functions** allow you to fit different areas of your data to different functions that
+will allow them to fit the data better overall. This is stated in the book as avoiding imposing a 
+**global structure** on data, and to instead break the data into **bins**, allowing us to fit a different constant to each bin.
+
+To do this, we create cut points C(1), C(2)... ,C(k) in the range of X, then contruct K+! new variables. 
+
+You can see example pictures on page 269 in chapter 7.2 of ISLR
+
+### When do we use step functions? 
+
+Step functions should ONLY be used when there are very natural and easy to identify break points 
+in the X range of the data
+
+Step Functions are commonly used among Neural Networks as well.
+
 
 ### Model Code and Inputs:
-
+## Basics - Sample code not designed to be ran
 ```{r}
+# Fitted Step function
+lm(Y - cut(X,4))
+# Fitted Logistic Regression
+glm(Y - cut(X,4))
+```
+The above code chunk is choosing the data, and then the number of splits to employ! This is the entire applicaiton of the 
+step function. 
+
+Here it is in context!
+### Full Comprehensive Example! 
+## This example uses an LM function, but I will highlight when it fits a step function for analysis! 
+```{r}
+# Load library and attach data set
+rm(list=ls())
+library(ISLR)
+attach(Wage)
 ```
 
-### Model Tests:
 
 ```{r}
-
+#using the lm() function, in order to predict
+#wage using a fourth-degree polynomial in age: poly(age,4). The poly() command allows us to avoid having to write out a long formula with powers of age.
+fit=lm(wage~poly(age ,4) ,data=Wage)
+coef(summary(fit))
 ```
-### Model Improvements:
 
 ```{r}
-
+#We can use poly() to obtain age, age^2, age^3, and age^4, if we prefer. We do this by adding the raw=TRUE argument to the poly() function
+fit2 = lm(wage~poly(age,4,raw=T),data=Wage)
+coef(summary(fit2))
 ```
-### Comprehensive Example:
+```{r}
+# There are a few other ways to fit the model, showing the flexibility of the formula language in R:
+fit2a = lm(wage~age+I(age^2)+I(age^3)+I(age^4),data=Wage)
+coef(fit2a)
+
+fit2b = lm(wage~cbind(age,age^2,age^3,age^4),data=Wage)
+coef(fit2b)
+```
+```{r}
+#We now create a grid of values for age at which we want predictions, and then call the generic predict() function, specifying that we want standard errors as well
+agelims =range(age)
+age.grid=seq(from=agelims [1],to=agelims [2])
+preds=predict (fit ,newdata =list(age=age.grid),se=TRUE)
+se.bands=cbind(preds$fit +2* preds$se.fit,preds$fit -2* preds$se.fit)
+```
+
 
 ```{r}
+#Finally, we plot the data and add the fit from the degree-4 polynomial:
+plot(age ,wage ,xlim=agelims ,cex =.5,col=" darkgrey ")
+lines(age.grid ,preds$fit,lwd=2,col="blue")
+matlines(age.grid ,se.bands ,lwd=1, col=" blue",lty=3)
+```
+
+
+```{r}
+#To determine the simplest model which is sufficient to explain the relationship between wage and age we fit 5 models of increasing polynomial degrees:
+fit.1 =lm(wage~age,data=Wage)
+fit.2 =lm(wage~poly(age,2),data=Wage)
+fit.3 =lm(wage~poly(age,3),data=Wage)
+fit.4 =lm(wage~poly(age,4),data=Wage)
+fit.5 =lm(wage~poly(age,5),data=Wage)
+anova(fit.1, fit.2, fit.3, fit.4, fit.5)
+```
+We use the anova() function, which performs an analysis of variance (ANOVA, using an F-test) in order to test the null analysis of hypothesis that a model M1 is sufficient to explain the data against the variance alternative hypothesis that a more complex model M2 is required.
+
+Result: Either a cubic or quadratic model (fit.3, fit.4) would be best for the data
+
+
+
+```{r}
+#Now we want to try to predict if an individual is making more than $250,000 per year:
+fit = glm(I(wage>250)~poly(age,4), data=Wage, family=binomial)
+
+#The expression wage > 250 evaluates to a logical variable of TRUE's and FALSE's, which are turned into 1's and 0's
+
+preds = predict(fit,newdata=list(age=age.grid),se=T)
+
+
+#The default prediction type for a glm() model is type="link", which is what we use here. This means we get predictions
+#of the logit, so some transformations need to be done to obtain the correct confidence interval
+pfit = exp(preds$fit)/(1+exp(preds$fit))
+se.bands.logit=cbind(preds$fit + 2*preds$se.fit, preds$fit - 2*preds$se.fit)
+se.bands = exp(se.bands.logit)/(1+exp(se.bands.logit))
+
 
 ```
+
+
+```{r}
+#To complete the right-hand side plot of figure 7.1:
+plot(age,I(wage>250), xlim=agelims, type="n", ylim=c(0,.2))
+points(jitter(age), I((wage>250)/5), cex=.5, pch="|", col="darkgrey")
+lines(age.grid, pfit, lwd=2, col="blue")
+matlines(age.grid, se.bands, lwd=1, col="blue", lty=3)
+
+```
+
+### Step Function Implementation ###
+ 
+```{r}
+table(cut(age,4))
+fit=lm(wage~cut(age,4),data=Wage)
+coef(summary(fit))
+```
+
+
+
+### Results and Final Thoughts
+
+The function automatically chose breakpoints of 33.5, 49, and 64.5 years, but we could have chosen our own 
+bins with the "breaks" option when splitting the data into bins. 
+
+The cut() function returns an ordered categorical variable, which the lm() function then uses to create dummy variables
+to regress upon.
+
+Age less than 33.5 is left out, and the result of that intercept is the average salary for those under 33.5 years old. 
+
+
 
 --------------------------------------------------------------------------------
 
@@ -1061,8 +1179,8 @@ library(splines)
 library(gam)
 Wage = Wage
 ##I am predicting Wage with:
-### smoothing spline of age with 4 dF (s() is the smoothing spline function)
-### Smoothing spline of year with 4 dF
+### smoothing spline of age with 6 dF (s() is the smoothing spline function)
+### Smoothing spline of year with 6 dF
 ### Education is factor variable but we want to add it, no need to smooth. Step Function is applied.
 levels(Wage$education)
 

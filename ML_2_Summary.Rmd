@@ -35,10 +35,174 @@ Author: Matt Sadosuk
 
 ### Summary/description:
 
+For forward stepwise selection: The model begins with no variables, then starts
+adding the most significant variables until a pre-specified stopping rule is reached 
+
+For backward stepwise selection: it begins with a model that contains all variables under
+consideration, then starts removing the least significant variables until a 
+pre-specified stopping rule is reached or until no vraible is left in the model
+
 
 ### When to employ this method/model:
+Forward and backward selection will be used when youre trying to identify the amount
+of features that will produce the best model.
+
+This R script will cover how to use Forward and Backward selection to identify which model is the best.
+As well it will feature a validation process to identify how close the results were before performing the test
+on the data set.
+
+Using the library mass, use the Boston dataset which is about the housing suburbs of the Boston area
+```{r}
+library(MASS)
+
+data(Boston)
+
+length(Boston)
+```
+
+The next step involves subsetting the data through the function regsubset from the library (leaps).
+First we need to perform the test without forward and backward selection to see how the model looks.
+Then to note for the code we will use medv (median value of owner-occupied homes in $1000s) as our Y-var,
+nvmax =14 which is the number of columns, then use the methods "forward" and "backward"
+
+```{r}
+library(leaps)
+
+regfit.full=regsubsets(medv~.,data=Boston ,nvmax=14)
+reg.summary =summary(regfit.full)
+
+regfit.fwd=regsubsets(medv~.,data=Boston , nvmax=14, method ="forward")
+summary(regfit.fwd)
+
+regfit.bwd=regsubsets(medv~.,data=Boston , nvmax=14, method ="backward")
+summary(regfit.bwd)
+
+```
+
+Following the subsetting the next step is to do coefficient test on the best 7 x variables. 
 
 
+```{r}
+reg.summary$rsq
+
+coef(regfit.full ,7)
+coef(regfit.fwd ,7)
+coef(regfit.bwd ,7)
+```
+
+In order for these approaches to yield accurate estimates of the test
+error, we must use only the training observations to perform all aspects of
+model-fitting—including variable selection. Therefore, the determination of
+which model of a given size is best must be made using only the training
+observations. 
+
+Now we split the training and test data using a sample vector of true and false items. 
+If true item is in the training set otherwise it will be False. The test
+is TRUE if the observation point is in the data set otherwise it will return False. 
+In the test line we use the !train to switch the true and false values for the 
+test dataset
+
+```{r}
+set.seed(1)
+train=sample(c(TRUE ,FALSE), nrow(Boston),rep=TRUE)
+test=(!train)
+```
+
+Following the splitting of data into the test and training set we now want to 
+perform the best subset selection. We do this by now using Boston[train,] which
+is new sample vector of true and false values. We are still using a nvmax of 14. 
+
+```{r}
+regfit.best=regsubsets(medv~.,data=Boston[train ,],nvmax=14)
+```
+
+Next we will get the validation error for the best model size by creating a model
+matrix for the test data. The model.matrix() function builds an X matrix from the data
+
+```{r}
+test.mat=model.matrix(medv~.,data=Boston[test ,])
+```
+
+Next we create a for loop that takes each size i and will be extract the coefficients
+from the variable regfit.best, then multiply the coef into the appropriate columns
+for the test model matrix to make predictions and the compute the test MSE
+
+First we create a empty vector from 1 to 13, the create the for loop, inside the 
+brackets calculate coefficient of each i, then make predictions from those coefficients
+and finally using the empty vector of errors calculate the mse and fill the empty vector
+with the new test MSE
+```{r}
+val.errors = rep(1,13)
+for(i in 1:13){
+  coefi=coef(regfit.best ,id=i)
+  pred=test.mat[,names(coefi)]%*%coefi
+  val.errors[i]=mean((Boston$medv[test]-pred)^2)
+}
+val.errors
+```
+
+We now use the which min to see what is the best amount of variables to use
+```{r}
+which.min(val.errors)
+```
+
+With the new variables test the new coefficients to see the new variables interaction
+with the model
+
+```{r}
+regfit.best=regsubsets(medv~.,data=Boston ,nvmax=14)
+coef(regfit.best,11)
+```
+
+Now we want to choose among models with different sizes using cross validation method.
+We want to perform the best subset selection within each of the k training sets.
+Since our best fit is 11 variables we will set k =11, next we will use the k fold 
+method. This involves taking a sample of each of the k values for all the rows
+in the boston dataset. Finally we will create a matrix to store the store the results
+
+
+```{r}
+k=11
+set.seed(1)
+folds=sample(1:k,nrow(Boston),replace=TRUE)
+cv.errors= matrix(NA,k,14, dimnames = list(NULL, paste(1:14)))
+```
+
+Now we can perform the cross validation through a for loop that looks for elements 
+of folds that equal j are in the test and the rest in the training. Which the 
+folds! will accomplish that goal. After this we use another loop to make model
+predictions and then calculate the test error rates for the subsetted data. 
+Using the predict function we will be predicting using the best.fit model and 
+using all be all of the folds that equal the jth element. Finally the cv errors
+will index of each column and row values and fill the error vector with the 
+new calculated mse values
+
+```{r}
+for(j in 1:k){
+ best.fit=regsubsets(medv~.,data=Boston[folds!=j,],nvmax=14)
+ for(i in 1:13){
+  pred=predict(best.fit ,Boston[folds ==j,],id=i)
+  cv.errors[j,i]= mean((Boston$medv[ folds==j]-pred)^2)
+  }
+}
+```
+
+Now we apply the cv.error mse values and and find the mean of each row and take the
+square root of the values
+```{r}
+mean.cv.errors=sqrt(apply(cv.errors ,2, mean))
+mean.cv.errors
+
+par(mfrow=c(1,1))
+plot(mean.cv.errors ,type="b")
+```
+
+After doing the CV on the Boston data set we can conclude that the 11 variable model
+is the best fit
+```{r}
+reg.best=regsubsets(medv~.,data=Boston , nvmax=14)
+coef(reg.best,11)
+```
 
 ### Model Code and Inputs:
 
@@ -187,33 +351,97 @@ predict(out,type = "coefficients",s=bestlam)[1:20,]
 Author: Jill Van den Dungen 
 
 ### Summary/description:
-
+Lasso is an alternative to the ridge regression. In lasso the l1 penalty has the effect of forcing some of the coefficients estimates to be exactly equal to zero when the tuning parameter lambda is sufficiently large. Resulting in the elimination of certain variables. Lasso performs variable selection. Models generated from lasso are sparse = they are easier to interpret than the models by ridge regression. 
 
 ### When to employ this method/model:
-
+Use lasso when we suspect that the model includes a lot of useless features. 
 
 
 ### Model Code and Inputs:
 
-```{r}
+```{r, eval =F}
+#Create the train (75%) and test (25%) data sets 
+train<-sample(1:nrow(x), nrow(x)*0.75)
+test<- (-train)
+y_test=y[test]
+
+#Create a lamba grid vector of 120 elements ranging from 10^10 to 10^-3 
+grid=10^seq(10,-3,length=120)
+
+#Using the glmnet() function, create a lasso model named mod.lasso that predicts the training y's using the training x's and the grid of lambda values created above.
+
+mod.lasso<-glmnet(x[train,],y[train],alpha = 1,lambda = grid)
 
 ```
 
 ### Model Tests:
 
-```{r}
+```{r,eval =F}
+#Evaluate training model performance using cross-validation
+#Using the cv.glmnet() function and the same parameters used above in the creation of mod.lasso (i.e. including the lambda grid vector),
+#     create a 12-fold cross-validation model named cv.out.lasso
 
+cv.out.lasso<-cv.glmnet(x[train,],y[train],alpha = 1,lambda = grid, nfolds=12)
+plot(mod.lasso)
 ```
 
 ### Model Improvements:
 
-```{r}
+```{r,eval =F}
+#Display the best cross-validated lambda value (the one that produces the lowest deviance - do not use the 1-standard error rule here).
+bestlam<-cv.out.lasso$lambda.min
 
+#Using the best lambda and the model named mod.lasso, create a vector of test set predictions.
+lasso.pred<- predict(mod.lasso, s=bestlam, newx= x[test,])
+
+#Compute and display the test error rate.
+mean((lasso.pred-y_test)^2)
 ```
 
 ### Comprehensive Example:
 
-```{r}
+```{r,eval =F}
+#Using the hitters data set, we set up the "x" and "y" matrix values so that we can use the glmnet function. 
+x=model.matrix(Salary~.,HitData)[,-1]
+y=HitData$Salary
+
+#Make a grid of lambda values
+grid=10^seq(10,-2,length=100)
+
+#Create test and train 
+set.seed(1)
+train<-sample(1:nrow(x),nrow(x)/2)
+test=(-train)
+y.test=y[test]
+
+#Create lasso model using train set
+lasso.mod<-glmnet(x[train,],y[train], alpha=1, lambda= grid)
+plot(lasso.mod)
+
+#Create cross validation model
+set.seed(1)
+cv.out<-cv.glmnet(x[train], y[train], alpha=1)
+plot(cv.out)
+
+#Create best lambda and make predictions
+bestlam<- cv.out$lambda.train
+bestlam
+
+lasso.pred<-predict(lasso.mod, s=bestlam, newx= x[test,])
+mean((lasso.pred-y.test)^2)
+
+#explore whole data set to see what best lambda is
+out=glmnet(x,y,alpha= 1, lambda= grid)
+lasso.coef<- predict(out, type= 'coefficients', s=bestlam)[1:20,]
+lasso.coef
+ (Intercept)         AtBat          Hits         HmRun          Runs 
+   1.27479059   -0.05497143    2.18034583    0.00000000    0.00000000 
+          RBI         Walks         Years        CAtBat         CHits 
+   0.00000000    2.29192406   -0.33806109    0.00000000    0.00000000 
+       CHmRun         CRuns          CRBI        CWalks       LeagueN 
+   0.02825013    0.21628385    0.41712537    0.00000000   20.28615023 
+    DivisionW       PutOuts       Assists        Errors    NewLeagueN 
+-116.16755870    0.23752385    0.00000000   -0.85629148    0.00000000 
 
 ```
 --------------------------------------------------------------------------------

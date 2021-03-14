@@ -5,6 +5,7 @@ date: "3/9/2021"
 output:
     html_document:
     toc: true
+    toc_depth: 1
     toc_float: true
     df_print: paged
 ---
@@ -18,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE)
 This document is a comprehensive summary for Machine Learning 2. It is intended to help us study for the exams and for future reference in our professional lives (if any companies actually use R).
 
 ## Basic Statistics {.tabset}
-Authors: Carrington Metts
+Authors: Carrington Metts & Thomas Trankle
 
 ### Bias/Variance Tradeoff
 **Variance** is defined as the amount by which a prediction would vary if it were estimated with a different training set. A model with high variance is *overfit*- small 
@@ -30,6 +31,90 @@ training set are unlikely to significantly change the model, but the model still
 If your training error is low and test error is high, the model has *high variance*. If both the training and testing errors are high, the model has 
 *high bias*. If both the training and testing errors are low, the model has *low variance and low bias*. 
 
+### Law of Parsimony
+* Occam's razor
+* Simpler Model is always better than complex model
+* Only keep features that truly add substance to the model
+* Avoid **overfitting** the model
+  + Unimportant/irrelevant features overcomplicate model
+  + Highly correlated features overcomplicate model (multicollinearity)
+  + Interaction terms, polynomial terms, interaction with polynomials, etc.  models get complicated very quickly!
+
+### Stats Formula's
+Training set MSE = an underestimate of test MSE
+
+MSE = RSS /n
+
+Least squares method minimizes training not testing MSE
+
+We can estimate test error indirectly by adjusting training error:
+
+* $C_{P} = \frac{1}{n}(RSS + 2d\hat{\sigma}^{2})$
+  + Smaller $C_{p}$ value = smaller test error
+  + Select model with smaller $C_{P}$
+  + second term is the penalty factor for having more features
+* $\textbf{AIC} = \frac{1}{n\hat{\sigma}^2}(RSS + 2d\hat{\sigma}^{2})$
+* $\textbf{BIC} = \frac{1}{n\hat{\sigma}^2}(RSS + log(n)\hat{\sigma}^{2})$
+* $\textbf{Adjusted R}^2 = 1 - \frac{RSS/(n-d-1)}{TSS/(n-1)}$
+  + Smaller adjusted $R^{2}$ = larger test error
+  + Regular R2 is just RSS/TSS
+
+where 
+
+$\hat{\sigma}^2$ = residual variance estimated using full model 
+
+d = # of features used in the subset
+
+### Shrinkage/Regularization
+We generally have a problem when $n$ < $p$
+
+This creates low bias and high variance issue
+
+The solution to this is Regularization (shrinkage; desensitization)
+
+* Instead of fitting a model with all predictors (Xs)
+* Shrink (regularize; constrain) β coefficients towards zero
+* **NB**: This reduces **variance** but increases **bias**
+
+Generally, we do this with either feature selection, ridge or lasso.
+
+With regularization, we are adding a penalty to our objective function:
+
+* Linear = minimize RSS
+* Ridge = minimize RSS + $\lambda \times \text{slope}^2$ [penalty]
+* Lasso = minimize RSS + $\lambda \times |\text{slope}|$ [penalty]
+
+Overall, when we increase $\lambda$, we decrease the size of the slope/coefficients of
+certain beta's
+
+When $\lambda$ $\uparrow$
+
+* Beta slope $\downarrow$
+* the line gets flatter which means the label is less sensitive to the features
+* weight decay in gradient descent is larger 
+
+l2norm is a value between 0 and 1 (ratio od ridge vs LS estimates)
+
+$$\frac{||\hat{\beta}^{R}_{\lambda}||_{2}}{||\hat{\beta}||_{2}} = 
+\frac{\text{Betas estimated using ridge}}{\text{Betas estimated using least squares}}$$
+
+Ridge vs. Lasso
+
+* Use Ridge when most features in the model are useful (according to literature, theory, expertise, or common sense)
+
+* Use Lasso when we suspect that the model includes a lot of useless features
+  + Lasso helps us determine which features are useless (with zero slope)
+  + Lasso selects variables (similar to subset selection)
+  + Lasso model is sparse = easier to interpret than Ridge model
+
+Additional Considerations:
+
+* Coefficient estimates are sensitive to scaling
+  + Standardize predictors before using regularization
+* Estimates a line when n < p
+* Works best when LS regression produces high variance
+* Computationally feasible alternatives to subset selection
+
 ## Forward and Backward Selection {.tabset}
 Author: Matt Sadosuk
 
@@ -40,11 +125,11 @@ adding the most significant variables until a pre-specified stopping rule is rea
 
 For backward stepwise selection: it begins with a model that contains all variables under
 consideration, then starts removing the least significant variables until a 
-pre-specified stopping rule is reached or until no vraible is left in the model
+pre-specified stopping rule is reached or until no variable is left in the model
 
 
 ### When to employ this method/model:
-Forward and backward selection will be used when youre trying to identify the amount
+Forward and backward selection will be used when you're trying to identify the amount
 of features that will produce the best model.
 
 This R script will cover how to use Forward and Backward selection to identify which model is the best.
@@ -68,13 +153,13 @@ nvmax =14 which is the number of columns, then use the methods "forward" and "ba
 ```{r}
 library(leaps)
 
-regfit.full=regsubsets(medv~.,data=Boston ,nvmax=14)
+regfit.full=regsubsets(medv~.,data=Boston ,nvmax=13)
 reg.summary =summary(regfit.full)
 
-regfit.fwd=regsubsets(medv~.,data=Boston , nvmax=14, method ="forward")
+regfit.fwd=regsubsets(medv~.,data=Boston , nvmax=13, method ="forward")
 summary(regfit.fwd)
 
-regfit.bwd=regsubsets(medv~.,data=Boston , nvmax=14, method ="backward")
+regfit.bwd=regsubsets(medv~.,data=Boston , nvmax=13, method ="backward")
 summary(regfit.bwd)
 
 ```
@@ -113,7 +198,7 @@ perform the best subset selection. We do this by now using Boston[train,] which
 is new sample vector of true and false values. We are still using a nvmax of 14. 
 
 ```{r}
-regfit.best=regsubsets(medv~.,data=Boston[train ,],nvmax=14)
+regfit.best=regsubsets(medv~.,data=Boston[train ,],nvmax=13)
 ```
 
 Next we will get the validation error for the best model size by creating a model
@@ -132,7 +217,7 @@ brackets calculate coefficient of each i, then make predictions from those coeff
 and finally using the empty vector of errors calculate the mse and fill the empty vector
 with the new test MSE
 ```{r}
-val.errors = rep(1,13)
+val.errors = rep(0,13)
 for(i in 1:13){
   coefi=coef(regfit.best ,id=i)
   pred=test.mat[,names(coefi)]%*%coefi
@@ -149,8 +234,21 @@ which.min(val.errors)
 With the new variables test the new coefficients to see the new variables interaction
 with the model
 
+Create predict function for regsubsets(don't work with regular *predict*)
+
 ```{r}
-regfit.best=regsubsets(medv~.,data=Boston ,nvmax=14)
+predict.regsubsets =function (object , newdata ,id ,...){
+ form=as.formula (object$call [[2]])
+ mat=model.matrix(form ,newdata )
+ coefi=coef(object ,id=id)
+ xvars=names(coefi)
+ mat[,xvars]%*%coefi
+}
+```
+
+
+```{r}
+regfit.best=regsubsets(medv~.,data=Boston ,nvmax=13)
 coef(regfit.best,11)
 ```
 
@@ -165,7 +263,7 @@ in the boston dataset. Finally we will create a matrix to store the store the re
 k=11
 set.seed(1)
 folds=sample(1:k,nrow(Boston),replace=TRUE)
-cv.errors= matrix(NA,k,14, dimnames = list(NULL, paste(1:14)))
+cv.errors= matrix(NA,k,13, dimnames = list(NULL, paste(1:13)))
 ```
 
 Now we can perform the cross validation through a for loop that looks for elements 
@@ -178,10 +276,11 @@ will index of each column and row values and fill the error vector with the
 new calculated mse values
 
 ```{r}
+k <- 11
 for(j in 1:k){
- best.fit=regsubsets(medv~.,data=Boston[folds!=j,],nvmax=14)
+ best.fit <- regsubsets(medv~.,data=Boston[folds!=j,],nvmax=13)
  for(i in 1:13){
-  pred=predict(best.fit ,Boston[folds ==j,],id=i)
+  pred=predict.regsubsets(best.fit ,Boston[folds ==j,],id=i)
   cv.errors[j,i]= mean((Boston$medv[ folds==j]-pred)^2)
   }
 }
@@ -234,16 +333,16 @@ coef(reg.best,11)
 Author: Sarah Brown
 
 ### Summary/description:
-With this method, you shrink the B coefficients of your features towards 0. It reduces variance but increases bias in the training data. It doesn't let you make a coefficient 0 (it shrinks asymptotically) and so no features are eliminated. So, we use this when most features are useful and none seem irrelevant (if they did, you'd look at using lasso perhaps). As λ goes up, beta slope goes down and the line gets flatter which means the model is less sensative to the features. This means that the weight decay in gradient descent is larger.
+With this method, you shrink the Beta coefficients of your features towards 0. It reduces variance but increases bias in the training data. It doesn't let you make a coefficient 0 (it shrinks asymptotically) and so no features are fully eliminated. So, we use this when most features are useful and none seem irrelevant (if they did, you'd look at using lasso perhaps). As λ goes up, beta slope goes down and the line gets flatter which means the model is less sensative to the features. This means that the weight decay in gradient descent is larger.
 
 ### When to employ this method/model:
 When the the training model is very accurate, but the test model is not, signaling that there is a large least squares error (high variance) in the test model. This means that the line is overfit to the training data. You want to minimize the the cost function which is: RSS + λ * (slope)^2 [penalty] where λ is the severity of the penalty, and is a tuning parameter. You can use ridge regression with:
 
 Multiple regression
-    λ(slope12 + slope22 + ….) (except for intercept)
+    $λ(slope12 + slope22 + \dots)$ (except for intercept)
 
 Categorical X (binary)
-    Slope = difference between the two categories
+    $Slope = \textit{difference between the two categories}$
 
 Logistic Regression
     Categorical Y
@@ -252,7 +351,14 @@ Logistic Regression
 
 ### Model Code and Inputs:
 
-```{r,eval = F}
+```{r}
+library(ISLR)
+library(glmnet)
+data(Hitters)
+Hitters <- na.omit(Hitters)
+x=model.matrix(Salary~.,Hitters)[,-1]
+y=Hitters$Salary
+
 #First, divide the data into training and testing (in this case, its 75% training)
 # (6) Create the train (75%) and test (25%) data sets 
 train = sample(1:nrow(x), nrow(x)*.75)
@@ -260,13 +366,13 @@ test=(-train)
 y.test=y[test]
 
 #Create a grid of lambda valaues. Then use the glmnet() function to create a model to predict the #training y's using the training x's. Use alpha = 0 for ridge regression.
-grid=10^seq(10,-3, length =120)
+grid=10^seq(10,-2,length=100)
 mod.ridge <- glmnet(x[train,], y[train], alpha=0, lambda =grid)
 ```
 
 ### Model Tests:
 
-``` {r,eval = F}
+``` {r}
 #Evaluate training model performance (how well it predicted the y-values) by using cross-validation, which is the cv.glmnet() function. (In this example code, we are creating a 12-fold cross-validation model, but by default it is a 10-fold cv).
 cv.out.ridge <- cv.glmnet(x[train,], y[train], alpha=0, lambda = grid, nfolds = 12)
 plot(cv.out.ridge)
@@ -274,7 +380,7 @@ plot(cv.out.ridge)
 
 ### Model Improvements:
 
-``` {r,eval = F}
+``` {r}
 #Make predictions using the best model by using the best lambda. Create a vector of test set #predictions.
 bestlam_r <- cv.out.ridge$lambda.min
 ridge.pred <- predict(mod.ridge, s=bestlam_r, newx=x[test,])
@@ -285,33 +391,31 @@ MSE_best_ridge<-mean((ridge.pred - y.test)^2)
 
 ### Comprehensive Example:
 
-```{r,eval = F}
+```{r}
 #Part 1: Exploring ridge regression without using a test and train set
 #Using the hitters data set, we set up the "x" and "y" matrix values so that we can use the glmnet function. 
-x=model.matrix(Salary~.,HitData)[,-1]
-y=HitData$Salary
+x=model.matrix(Salary~.,Hitters)[,-1]
+y=Hitters$Salary
 
 #Make a grid of lambda values, and see how many coefficients you have and how many potential lambda #values there are.
 grid=10^seq(10,-2,length=100)
 ridge.mod=glmnet(x,y,alpha = 0,lambda = grid)
 COEF<-coef(ridge.mod)
 dim(COEF)
-[1]  20 100 # 20 coefficients and 100 possible lambda values
+```
 
-#You can look at various lambda values and how they preform. Here is an example of looking at the #50th lambda value from the grid. 
+
+You can look at various lambda values and how they preform. Here is an example of looking at the #50th lambda value from the grid. 
+
+```{r}
 ridge.mod$lambda[50]
-[1] 11497.57
+
 coef(ridge.mod)[,50]
-  (Intercept)         AtBat          Hits         HmRun          Runs 
-407.356050200   0.036957182   0.138180344   0.524629976   0.230701523 
-          RBI         Walks         Years        CAtBat         CHits 
-  0.239841459   0.289618741   1.107702929   0.003131815   0.011653637 
-       CHmRun         CRuns          CRBI        CWalks       LeagueN 
-  0.087545670   0.023379882   0.024138320   0.025015421   0.085028114 
-    DivisionW       PutOuts       Assists        Errors    NewLeagueN 
- -6.215440973   0.016482577   0.002612988  -0.020502690   0.301433531 
+
 sqrt(sum(coef(ridge.mod)[-1,50]^2))# Find the L2 value
-[1] 6.360612
+```
+
+```{r}
 
 #Part 2: Predicting with a test and train set also using the hitters data
 #Create test and train 
@@ -326,22 +430,15 @@ cv.out=cv.glmnet(x[train,],y[train],alpha=0)
 plot(cv.out)
 bestlam<-cv.out$lambda.min
 bestlam #326.0828
-[1] 326.0828
+
 ridge.pred<-predict(ridge.mod,s=bestlam,newx = x[test,])
 mean((ridge.pred-y.test)^2) # 139856.6
-[1] 139856.6
+
 
 #We can also explore what the coefficients look like using the whole data set and our best lamda #value
 out<-glmnet(x,y,alpha = 0)
 predict(out,type = "coefficients",s=bestlam)[1:20,]
- (Intercept)        AtBat         Hits        HmRun         Runs          RBI 
- 15.44383135   0.07715547   0.85911581   0.60103107   1.06369007   0.87936105 
-       Walks        Years       CAtBat        CHits       CHmRun        CRuns 
-  1.62444616   1.35254780   0.01134999   0.05746654   0.40680157   0.11456224 
-        CRBI       CWalks      LeagueN    DivisionW      PutOuts      Assists 
-  0.12116504   0.05299202  22.09143189 -79.04032637   0.16619903   0.02941950 
-      Errors   NewLeagueN 
- -1.36092945   9.12487767 
+
 # no coefficients are zero because in ridge regression they aren't allowed to be
 ```
 --------------------------------------------------------------------------------
@@ -707,10 +804,10 @@ matlines (age.grid ,se.bands ,lwd=1, col="blue",lty=3)
 
 --------------------------------------------------------------------------------
 
-### Step Functions
+## Step Functions{.tabset}
 Author: Alex Russett
 
-#Summary and Description
+###Summary and Description
 
 In general **step functions** allow you to fit different areas of your data to different functions that
 will allow them to fit the data better overall. This is stated in the book as avoiding imposing a 
@@ -729,8 +826,9 @@ Step Functions are commonly used among Neural Networks as well.
 
 
 ### Model Code and Inputs:
-## Basics - Sample code not designed to be ran
-```{r}
+
+#### Basics - Sample code not designed to be ran
+```{r, eval = F}
 # Fitted Step function
 lm(Y - cut(X,4))
 # Fitted Logistic Regression
@@ -741,7 +839,7 @@ step function.
 
 Here it is in context!
 ### Full Comprehensive Example! 
-## This example uses an LM function, but I will highlight when it fits a step function for analysis! 
+This example uses an LM function, but I will highlight when it fits a step function for analysis! 
 ```{r}
 # Load library and attach data set
 rm(list=ls())
@@ -830,7 +928,7 @@ matlines(age.grid, se.bands, lwd=1, col="blue", lty=3)
 
 ```
 
-### Step Function Implementation ###
+### Step Function Implementation
  
 ```{r}
 table(cut(age,4))
@@ -849,8 +947,6 @@ The cut() function returns an ordered categorical variable, which the lm() funct
 to regress upon.
 
 Age less than 33.5 is left out, and the result of that intercept is the average salary for those under 33.5 years old. 
-
-
 
 --------------------------------------------------------------------------------
 
@@ -874,7 +970,7 @@ The points where the coefficients change are called *knots*.
 In general, if we place *K* different knots throughout the range of *X*, then we
 will end up fitting *K + 1* different polynomials.
 ```{r, echo = F, cache=T}
-knitr::include_graphics("./regKnots.png")
+knitr::include_graphics("C:/Users/ttran/Documents/ML2/Machine-Learning-2-Model-Summary/regKnots.png")
 ```
 
 To make it a continuous function we add constraints to the model.
@@ -885,7 +981,7 @@ Remember, there are degrees of freedom for the entire model(Total DF) and the
 specified degrees of freedom for the polynomial (df).
 $$df = degree + knots$$
 ```{r, eval = F}
-# Using the bs() function
+# Using the bs() function deals with the formula above
 bs(x , df = NULL, knots = NULL, degree = 3 #default
    intercept = False)
 ```
@@ -1058,13 +1154,19 @@ lots of degrees of freedom (one @ each knot = sample size n)
 
 ### Model Code and Inputs:
 
-```{r,eval = F}
-(9) Now let's fit smoothing splines with cross-validation
-regression_fit=smooth.spline(x,y,df=12)   #use the first fit to set df
-smooth_fit=smooth.spline(x,y, cv=TRUE)  #fits the training data with LOOCV
+Now let's fit smoothing splines with cross-validation
+
 df= Degrees of freedom
 cv= cross validation
-(10) Display number of degrees of freedom in the cross-validated smoothing spline.
+
+```{r,eval = F}
+library(splines)
+
+regression_fit=smooth.spline(x,y,df=12)   #use the first fit to set df
+smooth_fit=smooth.spline(x,y, cv=TRUE)  #fits the training data with LOOCV
+
+
+#Display number of degrees of freedom in the cross-validated smoothing spline.
 smooth_fit$df   #df produces splines at uniform knots
 
 ```
@@ -1092,23 +1194,23 @@ N/A... would just use a different model
 ### Comprehensive Example:
 
 ```{r,eval = F}
-> library(splines)
-> fit=lm(wage∼bs(age ,knots=c(25,40,60) ),data=Wage)
-> pred=predict (fit ,newdata =list(age=age.grid),se=T)
-> plot(age ,wage ,col="gray")
-> lines(age.grid ,pred$fit ,lwd=2)
-> lines(age.grid ,pred$fit +2*pred$se ,lty="dashed ")
-> lines(age.grid ,pred$fit -2*pred$se ,lty="dashed ")
-> fit2=lm(wage∼ns(age ,df=4),data=Wage) 
-> pred2=predict (fit2 ,newdata=list(age=age.grid),se=T)
-> lines(age.grid , pred2$fit ,col="red",lwd=2)
-> plot(age ,wage ,xlim=agelims ,cex =.5,col=" darkgrey ") 
-> title("Smoothing Spline ") > fit=smooth .spline(age ,wage ,df=16) 
-> fit2=smooth.spline (age ,wage ,cv=TRUE) 
-> fit2$df
-> lines(fit ,col="red",lwd =2)
-> lines(fit2 ,col="blue",lwd=2) 
-> legend ("topright ",legend=c("16 DF" ,"6.8 DF"), col=c("red","blue"),lty=1,lwd=2, cex =.8)
+library(splines)
+fit=lm(wage∼bs(age ,knots=c(25,40,60) ),data=Wage)
+pred=predict (fit ,newdata =list(age=age.grid),se=T)
+plot(age ,wage ,col="gray")
+lines(age.grid ,pred$fit ,lwd=2)
+lines(age.grid ,pred$fit +2*pred$se ,lty="dashed ")
+lines(age.grid ,pred$fit -2*pred$se ,lty="dashed ")
+fit2=lm(wage∼ns(age ,df=4),data=Wage) 
+pred2=predict (fit2 ,newdata=list(age=age.grid),se=T)
+lines(age.grid , pred2$fit ,col="red",lwd=2)
+plot(age ,wage ,xlim=agelims ,cex =.5,col=" darkgrey ") 
+title("Smoothing Spline ") > fit=smooth .spline(age ,wage ,df=16) 
+fit2=smooth.spline (age ,wage ,cv=TRUE) 
+fit2$df
+lines(fit ,col="red",lwd =2)
+lines(fit2 ,col="blue",lwd=2) 
+legend ("topright ",legend=c("16 DF" ,"6.8 DF"), col=c("red","blue"),lty=1,lwd=2, cex =.8)
 
 ```
 --------------------------------------------------------------------------------
@@ -1127,7 +1229,7 @@ Local regression is an approach for fitting flexible non-linear functions. It in
 There are a few choices that are needed to be made. How to define the weighting function K, and whether linear, constant, or quadratic regression should be used. The most important choice is the span (s) which plays the role of a tuning parameter. The smaller the value, the more local the fit will be, the larger the span the more global the fit will be. Cross validation can be used to chose the span, or it can be specified directly. Local regression generalizes naturally when we want to fit models that have a pair of local vairables instead of one. Though too many can cause local regression to preform poorly. 
 
 ### Example 1:
-```{r}
+```{r, warnings = F, message=F}
 remove(list = ls())
 
 library(ISLR)
@@ -1151,14 +1253,16 @@ lines(age.grid ,predict (fit ,data.frame(age=age.grid)),
       col="red",lwd=2)
 lines(age.grid ,predict (fit2 ,data.frame(age=age.grid)),
         col="blue",lwd=2)
-legend ("topright ",legend=c("Span=0.2"," Span=0.5"),
+
+legend ("topright",legend=c("Span=0.2"," Span=0.5"),
           col=c("red","blue"),lty=1,lwd=2, cex =.8)
 
 
 ```
 
 ### Example 2
-```{r}
+
+```{r, warning=F}
 # Local Regression as building blocks with GAM using lo()
 library(gam)
 gam.lo = gam(wage~s(year, df = 4) + lo(age, span = 0.7) + education, 
@@ -1176,6 +1280,7 @@ plot(gam.lo.i)
 
 
 ```
+
 --------------------------------------------------------------------------------
 
 ## GAM {.tabset}
@@ -1208,8 +1313,8 @@ library(splines)
 library(gam)
 Wage = Wage
 ##I am predicting Wage with:
-### smoothing spline of age with 6 dF (s() is the smoothing spline function)
-### Smoothing spline of year with 6 dF
+### smoothing spline of age with 4 dF (s() is the smoothing spline function)
+### Smoothing spline of year with 4 dF
 ### Education is factor variable but we want to add it, no need to smooth. Step Function is applied.
 levels(Wage$education)
 

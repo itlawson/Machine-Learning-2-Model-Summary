@@ -705,7 +705,34 @@ matlines (age.grid ,se.bands ,lwd=1, col="blue",lty=3)
 
 ```
 
+--------------------------------------------------------------------------------
 
+## Step Functions {.tabset}
+Author: Alex Russett
+### Summary/description:
+
+### When to employ this method/model:
+
+### Model Code and Inputs:
+
+```{r}
+```
+
+### Model Tests:
+
+```{r}
+
+```
+### Model Improvements:
+
+```{r}
+
+```
+### Comprehensive Example:
+
+```{r}
+
+```
 
 --------------------------------------------------------------------------------
 

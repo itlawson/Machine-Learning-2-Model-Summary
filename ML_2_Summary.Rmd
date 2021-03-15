@@ -120,35 +120,34 @@ Author: Matt Sadosuk
 
 ### Summary/description:
 
-For forward stepwise selection: The model begins with no variables, then starts
-adding the most significant variables until a pre-specified stopping rule is reached 
+For forward stepwise selection, the model begins with no variables, then starts
+adding the most significant variables until a pre-specified stopping rule is reached.
 
-For backward stepwise selection: it begins with a model that contains all variables under
-consideration, then starts removing the least significant variables until a 
+Backward stepwise selection begins with a model that contains all variables, then starts removing the least significant variables until a 
 pre-specified stopping rule is reached or until no variable is left in the model
 
 
 ### When to employ this method/model:
-Forward and backward selection will be used when you're trying to identify the amount
-of features that will produce the best model.
+Forward and backward selection will be used when you're trying to identify which
+combination of features that will produce the best model.
 
 This R script will cover how to use Forward and Backward selection to identify which model is the best.
 As well it will feature a validation process to identify how close the results were before performing the test
 on the data set.
 
-Using the library mass, use the Boston dataset which is about the housing suburbs of the Boston area
+### Model Code and Inputs:
+Using the library mass, use the Boston dataset which is about the housing suburbs of the Boston area. The Boston dataset has 13 features. 
 ```{r}
 library(MASS)
-
 data(Boston)
-
 length(Boston)
 ```
 
 The next step involves subsetting the data through the function regsubset from the library (leaps).
 First we need to perform the test without forward and backward selection to see how the model looks.
-Then to note for the code we will use medv (median value of owner-occupied homes in $1000s) as our Y-var,
-nvmax =14 which is the number of columns, then use the methods "forward" and "backward"
+Then to note for the code we will use medv (median value of owner-occupied homes in $1000s) as our Y-var.
+The argument nvmax specifies the maximum number of subsets that will be considered. We can use method= to 
+specify forward or backward selection; otherwise, the default is full subset selection. 
 
 ```{r}
 library(leaps)
@@ -163,29 +162,34 @@ regfit.bwd=regsubsets(medv~.,data=Boston , nvmax=13, method ="backward")
 summary(regfit.bwd)
 
 ```
+The summary() function returns * if a given variable is included in the model. It is sorted by model size; the first
+row is the best 1-feature model, the second row is the best 2-feature model, etc.
 
-Following the subsetting the next step is to do coefficient test on the best 7 x variables. 
+The summary object stores the R squared values for each model:
+``` {r}
+reg.summary$rsq 
+```
+
+To see the coefficients of a model, use the coef() function. Let's try it with the 7-variable model: 
 
 
 ```{r}
-reg.summary$rsq
-
 coef(regfit.full ,7)
 coef(regfit.fwd ,7)
 coef(regfit.bwd ,7)
 ```
 
+### Model Tests:
 In order for these approaches to yield accurate estimates of the test
 error, we must use only the training observations to perform all aspects of
 model-fitting—including variable selection. Therefore, the determination of
 which model of a given size is best must be made using only the training
 observations. 
 
-Now we split the training and test data using a sample vector of true and false items. 
-If true item is in the training set otherwise it will be False. The test
-is TRUE if the observation point is in the data set otherwise it will return False. 
+Now we split the training and test data using a sample vector of True and False items. 
+A True value means the item is in the training set; otherwise it will be False. 
 In the test line we use the !train to switch the true and false values for the 
-test dataset
+test dataset. 
 
 ```{r}
 set.seed(1)
@@ -194,8 +198,9 @@ test=(!train)
 ```
 
 Following the splitting of data into the test and training set we now want to 
-perform the best subset selection. We do this by now using Boston[train,] which
-is new sample vector of true and false values. We are still using a nvmax of 14. 
+select the the best subset. We do this by now using Boston[train,] which
+is new sample vector of true and false values. We are still using a nvmax of 13 (which means
+we will examine a maximum of 13 subsets). 
 
 ```{r}
 regfit.best=regsubsets(medv~.,data=Boston[train ,],nvmax=13)
@@ -210,12 +215,11 @@ test.mat=model.matrix(medv~.,data=Boston[test ,])
 
 Next we create a for loop that takes each size i and will be extract the coefficients
 from the variable regfit.best, then multiply the coef into the appropriate columns
-for the test model matrix to make predictions and the compute the test MSE
+for the test model matrix to make predictions and compute the test MSE
 
-First we create a empty vector from 1 to 13, the create the for loop, inside the 
-brackets calculate coefficient of each i, then make predictions from those coefficients
-and finally using the empty vector of errors calculate the mse and fill the empty vector
-with the new test MSE
+First we create a empty vector from 1 to 13. Inside the for loop, we  calculate coefficient of each i, 
+then make predictions from those coefficients. 
+Finally, we calculate the test MSE and store it in the empty vector.
 ```{r}
 val.errors = rep(0,13)
 for(i in 1:13){
@@ -230,11 +234,10 @@ We now use the which min to see what is the best amount of variables to use
 ```{r}
 which.min(val.errors)
 ```
+Here, we see that the 11-feature model works best. 
 
-With the new variables test the new coefficients to see the new variables interaction
-with the model
-
-Create predict function for regsubsets(don't work with regular *predict*)
+We can also perform cross-validation to directly determine the test error rate. 
+Unfortunately, there is no predict() function for regsubset. Instead, we'll write our own: 
 
 ```{r}
 predict.regsubsets =function (object , newdata ,id ,...){
@@ -246,37 +249,25 @@ predict.regsubsets =function (object , newdata ,id ,...){
 }
 ```
 
+Now we want to choose among models with different sizes using a 10-fold cross validation method.
+We want to perform the best subset selection within each of the 10 training sets.
+ Finally we will create a matrix to store the store the results.
 
 ```{r}
-regfit.best=regsubsets(medv~.,data=Boston ,nvmax=13)
-coef(regfit.best,11)
-```
-
-Now we want to choose among models with different sizes using cross validation method.
-We want to perform the best subset selection within each of the k training sets.
-Since our best fit is 11 variables we will set k =11, next we will use the k fold 
-method. This involves taking a sample of each of the k values for all the rows
-in the boston dataset. Finally we will create a matrix to store the store the results
-
-
-```{r}
-k=11
+k=10
 set.seed(1)
 folds=sample(1:k,nrow(Boston),replace=TRUE)
 cv.errors= matrix(NA,k,13, dimnames = list(NULL, paste(1:13)))
 ```
 
-Now we can perform the cross validation through a for loop that looks for elements 
-of folds that equal j are in the test and the rest in the training. Which the 
-folds! will accomplish that goal. After this we use another loop to make model
-predictions and then calculate the test error rates for the subsetted data. 
-Using the predict function we will be predicting using the best.fit model and 
-using all be all of the folds that equal the jth element. Finally the cv errors
-will index of each column and row values and fill the error vector with the 
-new calculated mse values
+Now we can perform the cross validation through nested for loops. The first loop 
+(with j) iterates over each of the 10 folds as a test set. After this, we use another loop to make model
+predictions (using our new predict.regsubsets() function) and then calculate the test error rates for the subsetted data. 
+We then add the CV error to the matrix. The result is a 10x13 matrix, where the (i, j)th element 
+corresponds to the MSE for the ith fold for the model with *j* predictors.
 
 ```{r}
-k <- 11
+k <- 10
 for(j in 1:k){
  best.fit <- regsubsets(medv~.,data=Boston[folds!=j,],nvmax=13)
  for(i in 1:13){
@@ -286,10 +277,9 @@ for(j in 1:k){
 }
 ```
 
-Now we apply the cv.error mse values and and find the mean of each row and take the
-square root of the values
+Now we determine the average error for each model. We use apply() to average over each column.
 ```{r}
-mean.cv.errors=sqrt(apply(cv.errors ,2, mean))
+mean.cv.errors=apply(cv.errors ,2, mean)
 mean.cv.errors
 
 par(mfrow=c(1,1))
@@ -297,22 +287,12 @@ plot(mean.cv.errors ,type="b")
 ```
 
 After doing the CV on the Boston data set we can conclude that the 11 variable model
-is the best fit
+is the best fit.
+
+To get the coefficients for the final model:
 ```{r}
-reg.best=regsubsets(medv~.,data=Boston , nvmax=14)
-coef(reg.best,11)
-```
-
-### Model Code and Inputs:
-
-```{r}
-
-```
-
-### Model Tests:
-
-```{r}
-
+bestModel <- regsubsets(medv~., data=Boston, nvmax=13)
+coef(bestModel, 11)
 ```
 
 ### Model Improvements:
@@ -327,7 +307,6 @@ coef(reg.best,11)
 
 ```
 --------------------------------------------------------------------------------
-
 
 ## Ridge Regression {.tabset}
 Author: Sarah Brown

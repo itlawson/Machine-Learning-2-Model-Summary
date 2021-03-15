@@ -333,7 +333,7 @@ coef(reg.best,11)
 Author: Sarah Brown
 
 ### Summary/description:
-With this method, you shrink the Beta coefficients of your features towards 0. It reduces variance but increases bias in the training data. It doesn't let you make a coefficient 0 (it shrinks asymptotically) and so no features are fully eliminated. So, we use this when most features are useful and none seem irrelevant (if they did, you'd look at using lasso perhaps). As λ goes up, beta slope goes down and the line gets flatter which means the model is less sensative to the features. This means that the weight decay in gradient descent is larger.
+With this method, you shrink the Beta coefficients of your features towards 0. It reduces variance but increases bias in the training data. It doesn't let you make a coefficient 0 (it shrinks asymptotically) and so no features are fully eliminated. So, we use this when most features are useful and none seem irrelevant (if they did, you'd look at using lasso perhaps). As λ goes up, beta slope goes down and the line gets flatter which means the model is less sensitive to the features. This means that the weight decay in gradient descent is larger.
 
 ### When to employ this method/model:
 When the the training model is very accurate, but the test model is not, signaling that there is a large least squares error (high variance) in the test model. This means that the line is overfit to the training data. You want to minimize the the cost function which is: RSS + λ * (slope)^2 [penalty] where λ is the severity of the penalty, and is a tuning parameter. You can use ridge regression with:
@@ -1064,13 +1064,13 @@ abline(h= min(mse.error) + stdev, col = "red", lty = "dashed")
 2.) Now we can use the best degree found above, determine the correct number of 
 knots, if any.
 ```{r}
-# METHOD 1 - look for the best model using CV whilst changing knots
+
 error.vector <- rep(0,12) # create an error vector to store cv results
 
 set.seed(5082)
-for (i in 4:15 ){
-  regression.spline <- glm(wage ~ bs(age, df = i, degree= 4))
-  error.vector[i-3] <- cv.glm(Wage, regression.spline, K = 10)$delta[1] #The default is the average squared error function.(MSE)
+for (i in 3:14 ){
+  regression.spline <- glm(wage ~ bs(age, df = i, degree= 3))
+  error.vector[i-2] <- cv.glm(Wage, regression.spline, K = 10)$delta[1] #The default is the average squared error function.(MSE)
 }
 
 # Plot Results 
@@ -1080,7 +1080,7 @@ lines(error.vector, type = 'b',lty = 1)
 stdev <- sd(error.vector[1:12])
 abline(h= min(error.vector) + stdev, col = "red", lty = "dashed")
 ```
-So, for a degree-4 polynomial we will choose zero knots because this is the
+So, for a degree-3 polynomial we will choose 2 knots because this is the
 most simple model whose CV error, for knots, lies 
 within 1 SD error of the lowest cross validation error point.
 

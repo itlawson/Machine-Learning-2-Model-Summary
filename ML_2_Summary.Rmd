@@ -312,10 +312,25 @@ coef(bestModel, 11)
 Author: Sarah Brown
 
 ### Summary/description:
-With this method, you shrink the Beta coefficients of your features towards 0. It reduces variance but increases bias in the training data. It doesn't let you make a coefficient 0 (it shrinks asymptotically) and so no features are fully eliminated. So, we use this when most features are useful and none seem irrelevant (if they did, you'd look at using lasso perhaps). As λ goes up, beta slope goes down and the line gets flatter which means the model is less sensitive to the features. This means that the weight decay in gradient descent is larger.
+With this method, you shrink the Beta coefficients of your features towards 0. 
+It reduces variance but increases bias in the training data. 
+It doesn't let you make a coefficient 0 (it shrinks asymptotically) and so no features are fully eliminated. 
+So, we use this when most features are useful and none seem irrelevant (if they did, you'd look at using lasso perhaps). 
+As λ goes up, beta slope goes down and the line gets flatter which means the model is less sensitive to the features. 
+This means that the weight decay in gradient descent is larger.
 
 ### When to employ this method/model:
-When the the training model is very accurate, but the test model is not, signaling that there is a large least squares error (high variance) in the test model. This means that the line is overfit to the training data. You want to minimize the the cost function which is: RSS + λ * (slope)^2 [penalty] where λ is the severity of the penalty, and is a tuning parameter. You can use ridge regression with:
+When the the training model is very accurate, but the test model is not, signaling that there is a large least 
+squares error (high variance) in the test model. This means that the line is overfit to the training data. You want to 
+minimize the the cost function which is: RSS + λ * (slope)^2 [penalty] where λ is a tuning parameter that indicates the severity of the penalty. 
+When λ is very high, all coefficients are driven to 0. When λ is equal to 0, there is no effect, so the function is fit with least squares. 
+
+Ridge regression often considers the L2 norm, which is the sum of the squares of all coefficients. In particular, it is common to make 
+plots where one axis is equal to the L2 norm with ridge regression divided by the L2 norm with least squares. When this ratio is close to 0, 
+the coefficients with ridge regression take very small values (i.e. λ is very large). When this ratio is 1, the results of ridge regression and least squares 
+are the same (i.e. λ is small). 
+
+According to Dr. Chung's PowerPoint, you can use ridge regression with:
 
 Multiple regression
     $λ(slope12 + slope22 + \dots)$ (except for intercept)
@@ -326,7 +341,6 @@ Categorical X (binary)
 Logistic Regression
     Categorical Y
     Optimizes sum of likelihoods (rather than RSS)
-*Multiple Regression thru Logistic Regression above, is directly out of Professor Li's Ppt
 
 ### Model Code and Inputs:
 
@@ -384,7 +398,7 @@ dim(COEF)
 ```
 
 
-You can look at various lambda values and how they preform. Here is an example of looking at the #50th lambda value from the grid. 
+You can look at various lambda values and how they perform. Here is an example of looking at the #50th lambda value from the grid. 
 
 ```{r}
 ridge.mod$lambda[50]
@@ -427,7 +441,10 @@ predict(out,type = "coefficients",s=bestlam)[1:20,]
 Author: Jill Van den Dungen 
 
 ### Summary/description:
-Lasso is an alternative to the ridge regression. In lasso the l1 penalty has the effect of forcing some of the coefficients estimates to be exactly equal to zero when the tuning parameter lambda is sufficiently large. Resulting in the elimination of certain variables. Lasso performs variable selection. Models generated from lasso are sparse = they are easier to interpret than the models by ridge regression. 
+Lasso is an alternative to the ridge regression. The cost function for lasso regression is  RSS + λ * abs(slope). Here, the penalty 
+term is determined by the absolute value of the coefficients instead of the square. This has the effect of forcing some of the coefficients 
+estimates to be exactly equal to zero when the tuning parameter lambda is sufficiently large. Therefore, some variables 
+are eliminated. Models generated from lasso are sparse = they are easier to interpret than the models by ridge regression. 
 
 ### When to employ this method/model:
 Use lasso when we suspect that the model includes a lot of useless features. 
@@ -477,9 +494,12 @@ mean((lasso.pred-y_test)^2)
 ### Comprehensive Example:
 
 ```{r,eval =F}
+library(ISLR)
+data(Hitters)
+Hitters <- na.omit(Hitters)
 #Using the hitters data set, we set up the "x" and "y" matrix values so that we can use the glmnet function. 
-x=model.matrix(Salary~.,HitData)[,-1]
-y=HitData$Salary
+x=model.matrix(Salary~., data=Hitters)[,-1]
+y=Hitters$Salary
 
 #Make a grid of lambda values
 grid=10^seq(10,-2,length=100)
@@ -496,7 +516,7 @@ plot(lasso.mod)
 
 #Create cross validation model
 set.seed(1)
-cv.out<-cv.glmnet(x[train], y[train], alpha=1)
+cv.out<-cv.glmnet(x[train, ], y[train], alpha=1)
 plot(cv.out)
 
 #Create best lambda and make predictions
@@ -510,14 +530,6 @@ mean((lasso.pred-y.test)^2)
 out=glmnet(x,y,alpha= 1, lambda= grid)
 lasso.coef<- predict(out, type= 'coefficients', s=bestlam)[1:20,]
 lasso.coef
- (Intercept)         AtBat          Hits         HmRun          Runs 
-   1.27479059   -0.05497143    2.18034583    0.00000000    0.00000000 
-          RBI         Walks         Years        CAtBat         CHits 
-   0.00000000    2.29192406   -0.33806109    0.00000000    0.00000000 
-       CHmRun         CRuns          CRBI        CWalks       LeagueN 
-   0.02825013    0.21628385    0.41712537    0.00000000   20.28615023 
-    DivisionW       PutOuts       Assists        Errors    NewLeagueN 
--116.16755870    0.23752385    0.00000000   -0.85629148    0.00000000 
 
 ```
 --------------------------------------------------------------------------------

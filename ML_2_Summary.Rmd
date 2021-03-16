@@ -732,25 +732,37 @@ se.bands = cbind(preds$fit+2*preds$se.fit, preds$fit-2*preds$se.fit)
 We can now plot the data, prediction, and confidence interval: 
 ```{r poly_plot}
 par(mfrow=c(1,2), mar=c(4.5,4.5,1,1), oma=c(0,0,4,0))
-plot(Wage$age, Wage$wage, xlim=agelims, cex =.5, col="darkgrey ")
+plot(Wage$age, Wage$wage, xlim=agelims, cex =.5, col="darkgrey ") #data
 title("Degree-3 Polynomial",outer=T)
-lines(age.grid, preds$fit, lwd=2, col="blue")
-matlines(age.grid, se.bands, lwd=1, col=" blue", lty=3)
+lines(age.grid, preds$fit, lwd=2, col="blue") #predictions
+matlines(age.grid, se.bands, lwd=1, col=" blue", lty=3) #confidence interval
 ```
 
 #### Polynomial Logistic Regression
-The glm() function automatically returns predictions in logit form, so we need to transform them to the actual values. 
+The glm() function automatically returns predictions in logit form, so we need to transform them to the actual values (ie probabilities that 
+range from 0 to 1, as we expect).
 Other than that, the predictions and confidence intervals are computed and plotted in the same way. 
 
 ```{r poly_logistic_predict}
-logist_preds = predict(logistic_fit,newdata=list(age=age.grid),se=T)
+logist_preds = predict(logistic_fit,newdata=list(age=age.grid),se=T) #make predictions
+
+#transform predictions from logit form 
 pfit = exp(logist_preds$fit)/(1+exp(logist_preds$fit))
+
+#compute confidence intervals and transform from logit form 
 se.bands.logit = cbind(logist_preds$fit +2* logist_preds$se.fit , logist_preds$fit -2*logist_preds$se.fit)
 se.bands = exp(se.bands.logit)/(1+exp(se.bands.logit))
 
-plot(Wage$age ,I(Wage$wage >250),xlim=agelims ,type="n",ylim=c(0,.2))
+#plot data, fit, confidence band
+plot(Wage$age ,I(Wage$wage >250),xlim=agelims ,type="n",ylim=c(0,.2)) #data
+
+#add a jitter to the points so they don't overlap each other (just for aesthetics)
 points(jitter(Wage$age), I((Wage$wage >250)/5),cex=.5,pch ="|", col="darkgrey")
+
+#prediction
 lines(age.grid ,pfit ,lwd=2, col ="blue")
+
+#confidence interval
 matlines (age.grid ,se.bands ,lwd=1, col="blue",lty=3)
 ```
 
@@ -758,7 +770,7 @@ matlines (age.grid ,se.bands ,lwd=1, col="blue",lty=3)
 
 #### Polynomial Regression
 ``` {r poly_full}
-#pick best model 
+#run anova to pick best model (degree 1-5)
 fit.1 <- lm(wage~age, data=Wage)
 fit.2 <- lm(wage~poly(age,2), data=Wage)
 fit.3 <- lm(wage~poly(age,3), data=Wage)
@@ -768,9 +780,11 @@ fit.5 <- lm(wage~poly(age,5), data=Wage)
 anova(fit.1, fit.2, fit.3, fit.4, fit.5)
 
 #fit.3 is the best, according to anova 
-#make predictions on other data points
+#create vector of new ages to make predictions on 
 agelims  = range(Wage$age)
 age.grid = seq(from=agelims[1], to=agelims[2])
+
+#make predictions 
 preds    = predict(fit.3, newdata=list(age=age.grid), se=TRUE)
 
 #compute confidence interval
@@ -778,10 +792,10 @@ se.bands = cbind(preds$fit+2*preds$se.fit, preds$fit-2*preds$se.fit)
 
 #plot data, fit, 95% confidence interval
 par(mfrow=c(1,1), mar=c(4.5,4.5,1,1), oma=c(0,0,4,0))
-plot(Wage$age, Wage$wage, xlim=agelims, cex =.5, col="darkgrey ")
+plot(Wage$age, Wage$wage, xlim=agelims, cex =.5, col="darkgrey ") #data
 title("Degree-3 Polynomial",outer=T)
-lines(age.grid, preds$fit, lwd=2, col="blue")
-matlines(age.grid, se.bands, lwd=1, col=" blue", lty=3)
+lines(age.grid, preds$fit, lwd=2, col="blue") #fit 
+matlines(age.grid, se.bands, lwd=1, col=" blue", lty=3) #confidence interval
 ````
 
 #### Polynomial Logistic Regression
@@ -789,15 +803,26 @@ matlines(age.grid, se.bands, lwd=1, col=" blue", lty=3)
 #create the model 
 logistic_fit <- glm(I(wage>250)~poly(age, 4), data=Wage, family=binomial)
 
-#make predictions for new data 
+#make predictions for new data (returns probabilities in logit form)
 logist_preds = predict(logistic_fit,newdata=list(age=age.grid),se=T)
+
+#transform probabilities from logit form to normal (ie probabilities that go from 0 to 1, as we expect)
 pfit = exp(logist_preds$fit)/(1+exp(logist_preds$fit))
+
+#find the 2-standard-deviation confidence intervals 
 se.bands.logit = cbind(logist_preds$fit +2* logist_preds$se.fit , logist_preds$fit -2*logist_preds$se.fit)
+
+#transform confidence intervals from logit to normal form 
 se.bands = exp(se.bands.logit)/(1+exp(se.bands.logit))
 
+#plot the data points, apply a jitter so they aren't on top of each other 
 plot(Wage$age ,I(Wage$wage >250),xlim=agelims ,type="n",ylim=c(0,.2))
 points(jitter(Wage$age), I((Wage$wage >250)/5),cex=.5,pch ="|", col="darkgrey")
+
+#plot the predicted values (age.grid and the Y predictions)
 lines(age.grid ,pfit ,lwd=2, col ="blue")
+
+#plot the confidence intervals 
 matlines (age.grid ,se.bands ,lwd=1, col="blue",lty=3)
 
 ```

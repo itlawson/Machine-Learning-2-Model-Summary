@@ -115,6 +115,8 @@ Additional Considerations:
 * Works best when LS regression produces high variance
 * Computationally feasible alternatives to subset selection
 
+--------------------------------------------------------------------------------
+
 ## Forward and Backward Selection {.tabset}
 Author: Matt Sadosuk
 
@@ -295,17 +297,6 @@ bestModel <- regsubsets(medv~., data=Boston, nvmax=13)
 coef(bestModel, 11)
 ```
 
-### Model Improvements:
-
-```{r}
-
-```
-
-### Comprehensive Example:
-
-```{r}
-
-```
 --------------------------------------------------------------------------------
 
 ## Ridge Regression {.tabset}
@@ -832,7 +823,7 @@ matlines (age.grid ,se.bands ,lwd=1, col="blue",lty=3)
 ## Step Functions{.tabset}
 Author: Alex Russett
 
-###Summary and Description
+### Summary and Description
 
 In general **step functions** allow you to fit different areas of your data to different constant functions that
 will allow them to fit the data better overall. This is stated in the book as avoiding imposing a 
@@ -853,6 +844,7 @@ Step Functions are commonly used among Neural Networks as well.
 ### Model Code and Inputs:
 
 #### Basics - Sample code not designed to be run
+
 ```{r, eval = F}
 # Fitted Step function
 lm(Y ~ cut(X,4))
@@ -863,7 +855,9 @@ The above code chunk is choosing the data, and then the number of splits to empl
 step function. 
 
 Here it is in context!
+
 ### Full Comprehensive Example
+
 This example uses an LM function, but I will highlight when it fits a step function for analysis! 
 ```{r}
 # Load library and attach data set
@@ -1103,11 +1097,6 @@ So, for a degree-3 polynomial we will choose 2 knots because this is the
 most simple model whose CV error, for knots, lies 
 within 1 SD error of the lowest cross validation error point.
 
-### Model Improvements:
-
-```{r}
-
-```
 
 ### Comprehensive Example:
 
@@ -1204,11 +1193,6 @@ title("Smoothing Spline")
 
 ```
 
-### Model Improvements:
-
-```{r,eval = F}
-N/A... would just use a different model
-```
 
 ### Comprehensive Example:
 
@@ -1303,7 +1287,9 @@ plot(gam.lo.i)
 --------------------------------------------------------------------------------
 
 ## GAM {.tabset}
+
 Author: Akram Bijapuri
+
 ### Summary/description:
 
 Generalized Additive Models allow us to fit a non-linear smoothing function (smoothing spline, natural splining, poly, etc.) to each of the variables(X) at one time.
@@ -1326,6 +1312,7 @@ Negative: It can only be additive. In analyzing data with multiple models, it is
 
 
 ### Model Code and Inputs:
+
 ```{r setupWork}
 library(ISLR)
 library(splines)
@@ -1350,6 +1337,7 @@ plot(gam1,se=T)
 
 ```
 ### Model Test:
+
 ```{r test1, tidy=TRUE}
 
 #Let's observe qualitative output here  (Will do quantitative in comprehensive example)
@@ -1370,6 +1358,7 @@ plot(logitgam2,se=T)
 ```
 
 ### Model Improvements:
+
 ```{r AnovaModel, tidy=TRUE}
 
 anova(logitgam1,logitgam2)

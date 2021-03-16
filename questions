@@ -1,2 +1,16 @@
-1. How do you determine the best model when doing polynomial logistic regression? Is it ARIMA, cross-validation, or something else? 
-  A: 
+1. How do you determine the best model when doing polynomial logistic regression? Is it anova, cross-validation, or something else? 
+  A: To figure out the degree of the polynomial, run anova. To determine accuracy rate, convert the output probabilities to factors and make a confusion matrix. 
+  
+2. How does anova work? 
+  A: anova only works when the models are nested (each subsequent model contains the previous one). For example, a polynomial with degree 4 will include the 3rd degree model. 
+    The resid. column shows the residual of the model. If anova shows a significant difference between models, choose the model with the lowest residual score. 
+  
+3. For boosting, what is the difference between distribution='bernoulli' and distribution='gaussian'?
+  A: Bernoulli is used for classification trees, Gaussian is for regression
+  
+4. The gbm() function (for boosting) requires that you convert the Y variable to numeric. The people who write R libraries do not care about consistency. 
+
+5. How do you calculate degrees of freedom for natural splines? 
+  A: Total DF includes an extra degree of freedom that R does not. She'll try to be clear about it. But maybe not 
+  
+

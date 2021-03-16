@@ -557,7 +557,7 @@ PLS and PCR have very similar performances.
 
 Uses: 
 1) When there are more variables than observation (wide data)
-Shopping Behavior (Y) and Searh Keywords
+Shopping Behavior (Y) and Search Keywords
 2) When the explanatory variables are highly correlated
 3) Use PLS when you want to reduce bias
 
@@ -705,14 +705,23 @@ anova(fit.1, fit.2, fit.3, fit.4, fit.5)
 Here, we see that the p-values for fits 2 and 3 are less than 0.05, which means the models are significant. However, the p-value for 
 fit 4 is 0.051046. This means the fourth model is not significantly better than the third model. Therefore, we should use the third-order model. 
 
+The effectiveness of a polynomial regression model may be determined by R^2, MSE, or any other regression error metric. For polynomial logistic regression,
+we typically determine the output classes based on the predicted probabilities and compute the accuracy rate: 
+
+```{r eval=FALSE}
+predictedClasses = ifelse ( outputProb > .5, "Yes" , "No" )
+table(predictedClasses, actualClasses)
+
+```
+
 ### Model Predictions
 #### Polynomial Regression
 Now that we have chosen model 3, let's use it to predict wage for some new list of ages. We'll first create a new set of ages to feed to the model. 
 Then, we'll use the predict() function to calculate the predictions. 
 ```{r poly_predict}
-agelims  = range(Wage$age)
-age.grid = seq(from=agelims[1], to=agelims[2])
-preds    = predict(fit.3, newdata=list(age=age.grid), se=TRUE)
+agelims  = range(Wage$age) #pull out minimum and maximum ages
+age.grid = seq(from=agelims[1], to=agelims[2]) #create a list of ages from the smallest to largest age 
+preds    = predict(fit.3, newdata=list(age=age.grid), se=TRUE) #make predictions on the new list of ages 
 ```
 
 Now, we want to determine the 95% confidence interval for our predictions, which corresponds to 2 standard deviations in each direction. 
@@ -800,36 +809,36 @@ Author: Alex Russett
 
 ###Summary and Description
 
-In general **step functions** allow you to fit different areas of your data to different functions that
+In general **step functions** allow you to fit different areas of your data to different constant functions that
 will allow them to fit the data better overall. This is stated in the book as avoiding imposing a 
 **global structure** on data, and to instead break the data into **bins**, allowing us to fit a different constant to each bin.
 
-To do this, we create cut points C(1), C(2)... ,C(k) in the range of X, then contruct K+! new variables. 
+To do this, we create cut points C(1), C(2)... ,C(k) in the range of X, then construct K+! new variables. 
 
 You can see example pictures on page 269 in chapter 7.2 of ISLR
 
 ### When do we use step functions? 
 
 Step functions should ONLY be used when there are very natural and easy to identify break points 
-in the X range of the data
+in the X range of the data. They are commonly used with categorical features. 
 
 Step Functions are commonly used among Neural Networks as well.
 
 
 ### Model Code and Inputs:
 
-#### Basics - Sample code not designed to be ran
+#### Basics - Sample code not designed to be run
 ```{r, eval = F}
 # Fitted Step function
-lm(Y - cut(X,4))
+lm(Y ~ cut(X,4))
 # Fitted Logistic Regression
-glm(Y - cut(X,4))
+glm(Y ~ cut(X,4))
 ```
 The above code chunk is choosing the data, and then the number of splits to employ! This is the entire applicaiton of the 
 step function. 
 
 Here it is in context!
-### Full Comprehensive Example! 
+### Full Comprehensive Example
 This example uses an LM function, but I will highlight when it fits a step function for analysis! 
 ```{r}
 # Load library and attach data set
@@ -837,7 +846,6 @@ rm(list=ls())
 library(ISLR)
 attach(Wage)
 ```
-
 
 ```{r}
 #using the lm() function, in order to predict
@@ -867,14 +875,12 @@ preds=predict (fit ,newdata =list(age=age.grid),se=TRUE)
 se.bands=cbind(preds$fit +2* preds$se.fit,preds$fit -2* preds$se.fit)
 ```
 
-
 ```{r}
 #Finally, we plot the data and add the fit from the degree-4 polynomial:
 plot(age ,wage ,xlim=agelims ,cex =.5,col=" darkgrey ")
 lines(age.grid ,preds$fit,lwd=2,col="blue")
 matlines(age.grid ,se.bands ,lwd=1, col=" blue",lty=3)
 ```
-
 
 ```{r}
 #To determine the simplest model which is sufficient to explain the relationship between wage and age we fit 5 models of increasing polynomial degrees:
@@ -888,7 +894,6 @@ anova(fit.1, fit.2, fit.3, fit.4, fit.5)
 We use the anova() function, which performs an analysis of variance (ANOVA, using an F-test) in order to test the null analysis of hypothesis that a model M1 is sufficient to explain the data against the variance alternative hypothesis that a more complex model M2 is required.
 
 Result: Either a cubic or quadratic model (fit.3, fit.4) would be best for the data
-
 
 
 ```{r}
@@ -926,8 +931,6 @@ table(cut(age,4))
 fit=lm(wage~cut(age,4),data=Wage)
 coef(summary(fit))
 ```
-
-
 
 ### Results and Final Thoughts
 

@@ -983,7 +983,7 @@ The points where the coefficients change are called *knots*.
 In general, if we place *K* different knots throughout the range of *X*, then we
 will end up fitting *K + 1* different polynomials.
 ```{r, echo = F, cache=T}
-knitr::include_graphics("C:/Users/ttran/Documents/ML2/Machine-Learning-2-Model-Summary/regKnots.png")
+knitr::include_graphics("regKnots.png")
 ```
 
 To make it a continuous function we add constraints to the model.

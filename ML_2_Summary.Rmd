@@ -1780,3 +1780,76 @@ Call the varImpPlot to see which variables are most important to this random for
 ```{r}
 varImpPlot(bag.hitters)
 ```
+
+## Boosting
+
+Author: Team 15 I think (this was thrown in last minute)
+
+### Applied Exercise No. 10
+
+In this exercise, we'll use boosting to predict **Salary** in the Hitters data set.
+
+First thing we want to do is load the dataset and remove any observations where salary is missing.
+
+
+```{r Part A}
+library(MASS)
+library(tree)
+hitters <- ISLR::Hitters
+hitters<-hitters[-which(is.na(hitters$Salary)), ]
+hitters$Salary<-log(hitters$Salary)
+```
+ 
+
+We'll then create a training set consisting of the first 200 hitters, and a test set consisting of the remaining observations.
+
+
+```{r}
+train<-1:200
+hitters.train <- hitters[train,]
+hitters.test <- hitters[-train,]
+```
+
+
+From there, we'll perform boosting on the training set with 1,000 trees for a range of values of the shrinkage parameter lambda. Produce a plot with different shrinkage values on the x-axis and the corresponding training set MSE on the y-axis.
+
+
+```{r message = FALSE, warnings = FALSE}
+library(gbm)
+set.seed(1)
+boost.hitters<-gbm(Salary~.,data = hitters.train, distribution = "gaussian", 
+    n.trees = 1000)
+values = 10^seq(-9, 0, by = 0.04) #shrinkage values
+mse.train<-vector(mode="numeric")
+mse.test<-vector(mode="numeric")
+for (i in 1:length(values)) {
+ boost.hitters.train<-gbm(Salary~.,data = hitters.train, distribution = "gaussian", 
+                     n.trees = 1000, shrinkage = values[i])
+ pred.boost.train <- predict(boost.hitters.train, newdata = hitters.train, n.trees = 1000)
+ pred.boost.test <- predict(boost.hitters.train, newdata = hitters.test, n.trees = 1000)
+ mse.train[i]<-mean((pred.boost.train-hitters.train$Salary)^2)
+ mse.test[i] <- mean((pred.boost.test-hitters.test$Salary)^2)
+}
+plot(values,mse.train,ylab = "Train MSE", xlab = "Shrinkage Values", type = 'b', col = "forestgreen")
+best_mse<-min(mse.train) #use the one sd rule to pick the best shrinkage value and then use that model for the test
+best_mse #0.0005325252
+stdev= sd(mse.train[2:226])#this has the intercept in it so we don't want it to skew
+stdev #0.3343355
+abline(h=(best_mse + stdev), col = "red", lty = "dashed") #It's hard to see what is the best shrinkage value from this plot
+dataframe<-data.frame(values,mse.train) #make a dataframe and find the 
+dataframe 
+```
+
+
+Now we'll produce a plot on the test set.
+
+
+```{r}
+plot(values,mse.test,ylab = "Test MSE", xlab = "Shrinkage Values", type = 'b', col = "goldenrod" )
+```
+
+```{r}
+0.0005325252+.334335 #add the best mse to the 1sd to get the maximum mse possible. It is 0.3348675. This is the upper bound.
+#when we find this in the dataframe, we see the corresponding shrinkage value is 1.202264e-03. so we use this for the best model. 
+```
+

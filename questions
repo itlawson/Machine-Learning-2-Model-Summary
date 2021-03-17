@@ -9,6 +9,15 @@
   A: Bernoulli is used for classification trees, Gaussian is for regression
   
 4. The gbm() function (for boosting) requires that you convert the Y variable to numeric. The people who write R libraries do not care about consistency. 
+  In R, this looks like: 
+  
+  #First we need to create a numeric version of the attrition variable 
+  #as.numeric(attrition.train$attrition) produces 1 for No and 2 for Yes
+  #so we need to shift the distribution by -1
+  
+  attritionDF$numAttrition <- as.numeric(attritionDF$attrition)-1
+  attrition.train <- attritionDF[train.indices.attrition, ]
+  attrition.test <- attritionDF[-train.indices.attrition, ]
 
 5. How do you calculate degrees of freedom for natural splines? 
   A: Total DF includes an extra degree of freedom that R does not. She'll try to be clear about it. But maybe not 

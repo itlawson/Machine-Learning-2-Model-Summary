@@ -1940,7 +1940,7 @@ summary(best_model)
 This summary function will give more information about the chosen model, including the number of support vectors. 
 
 ### Model Predictions 
-Since the best model is determined with cross-validation, there is usually not a test and training set. However, the 
+Since the best model is determined with cross-validation, there may not be a test and training set. However, the 
 predict() function can still be used to show the prediction for each data point. The syntax is: 
 
 ```{r eval=F}
@@ -1951,8 +1951,9 @@ The model parameters are:
 
 * *model* is the name of the SVM model 
 * *newdata* is the data for which the prediction is being made 
-+ In this case, we're making predictions on the entire dataset. 
-+ The model is built on the features, so we need to remove the response variable (Y) from the dataset 
+    + In this case, we're making predictions on the entire dataset. 
+    + The model is built on the features, so we need to remove the response variable (Y) from the dataset 
+    + If we had test and training sets that were split into X and Y, we would not need to include the select() portion
 * *dataframe* is the dataframe containing the data to make the prediction 
 
 ### Plots
@@ -1969,8 +1970,8 @@ The function inputs are:
 * *x1* and *x2* are features. If there are only 2 features in the model, it is not necessary to specify them here. 
 * *slice* is an optional argument that fixes the values for all features except x1 and x2. That is, the plot will 
 show the decision boundary with the assumption that every observation has the same value of x3, x4, etc. 
-+ If there are only 2 features in the model, there is no need to specify slice 
-+ If there are more than 2 features, slice is optional. The default value for all features is 0
+    + If there are only 2 features in the model, there is no need to specify slice 
+    + If there are more than 2 features, slice is optional. The default value for all features is 0
 
 Each data point is either red or black, depending on its class. Support vectors are represented with crosses. 
 

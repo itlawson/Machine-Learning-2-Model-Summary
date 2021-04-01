@@ -1853,3 +1853,207 @@ plot(values,mse.test,ylab = "Test MSE", xlab = "Shrinkage Values", type = 'b', c
 #when we find this in the dataframe, we see the corresponding shrinkage value is 1.202264e-03. so we use this for the best model. 
 ```
 
+## Support Vector Classifier and Support Vector Machine {.tabset}
+Author: Carrington Metts
+
+### Summary/description
+A **support vector classifier (SVC)** creates a linear hyperplane to separate two classes of data. It is similar to 
+trees, but with only two regions. Additionally, the boundary does not have to be strictly horizontal or vertical. 
+**Support vector machines (SVMs)** are simply SVCs with nonlinear separating hyperplanes. For SVMs, the two most commonly 
+used separators are polynomial and radial. 
+
+After creating the separating hyperplane, the SVC/SVM classifies each observation based on which side of the hyperplane 
+it lies on. 
+
+### When to employ this method/model
+SVCs and SVMs are used for binary classification problems. They work best when the classes are entirely or 
+mostly separable. 
+
+
+### Model Code and Inputs
+SVC and SVM models are created using the svm() function from the e1071 library. The syntax is: 
+
+``` {r eval=F}
+library(e1071)
+svm(svmfit=svm(y~x, data=data_frame , kernel ="____", cost=_____, degree=_____, gamma=_____, scale=FALSE))
+```
+
+The parameters are: 
+
+* *y*: the response variable (which should be binary categorical). It **must** be encoded as a factor. 
+* *x*: the model features. There may be one or muliple. You can use . to specify all features in the given dataframe. 
+* *data*: the dataframe containing the data. 
+* *kernel*: the shape of the hyperplane. Use 'linear' for a linear SVC, 'polynomial' for a polynomial SVM, and 'radial' for a 
+radial SVM. 
+* *cost*: the value of the cost tuning parameter, which dictates the size of the SVC margins. If not specified, this is 
+determined through cross-validation. 
+* *degree*: the degree of the polynomial SVM hyperplane. This is **only** required for polynomial SVMs. If not specified, this is 
+determined through cross-validation. 
+* *gamma*: a tuning parameter for radial SVMs. A large gamma means distant observations have little effect on the classification 
+of a given observation. A small gamma means distant observations will have a larger effect. This is **only** required for 
+radial SVMs. If not specified, this is determined through cross-validation. 
+* *scale*: dictates whether the numeric X variables should be centered and scaled. It's usually a good idea to set scale=TRUE. 
+
+
+### Model Tests
+As previously mentioned, the values of cost, degree, and gamma are usually determined through cross-validation. 
+We use the tune() function from e1071. For a **linear SVM**, the only applicable parameter is cost. The syntax is: 
+
+``` {r eval=F}
+tune_out <- tune(svm, y~x, data=data_frame, kernel='linear', 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+```
+This function performs 10-fold cross-validation for each of the specified values of cost. 
+
+For a **polynomial SVM**, it is also necessary to determine the optimal degree. This time, the cross-validation is 
+performed for every combination of degree and cost. The syntax is: 
+
+``` {r eval=F}
+tune_out_poly <- tune(svm, y~x, data=data_frame, kernel='polynomial', 
+                ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100), 
+                            degree=c(2,3,4,5)), scale=TRUE)
+```
+
+Finally, for a **radial SVM**, it is necessary to determine the optimal cost and gamma. The syntax is the same as for the 
+previous two cases: 
+
+``` {r eval=F}
+tune_out_radial <- tune(svm, y~x, data=data_frame, kernel='polynomial', 
+                ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100), 
+                            gamma=c(0.5,1,2,3,4)), scale=TRUE)
+```
+
+To see the results of the cross-validation, use the summary() function: 
+``` {r eval=F}
+summary(tune_out)
+```
+This will show the cross-validated error rates for each of the parameters (or combinations of parameters). 
+
+The best model is the model with the lowest error rate. For SVMs, it is **not** necessary to use the one-standard-deviation rule to minimize 
+model complexity, since a higher-degree model will not be any more complex than a lower-degree one. Therefore, to 
+automatically pick the best model, use $best.model: 
+
+``` {r eval=F}
+best_model <- tune_out$best.model 
+summary(best_model)
+```
+This summary function will give more information about the chosen model, including the number of support vectors. 
+
+### Model Predictions 
+Since the best model is determined with cross-validation, there is usually not a test and training set. However, the 
+predict() function can still be used to show the prediction for each data point. The syntax is: 
+
+```{r eval=F}
+predictions <- predict(model, newdata = subset(dataframe, select=-c(y)))
+table(predict=predictions, truth=dataframe$y)
+```
+The model parameters are: 
+
+* *model* is the name of the SVM model 
+* *newdata* is the data for which the prediction is being made 
++ In this case, we're making predictions on the entire dataset. 
++ The model is built on the features, so we need to remove the response variable (Y) from the dataset 
+* *dataframe* is the dataframe containing the data to make the prediction 
+
+### Plots
+It is possible to visualize the SVM boundary in a plot. However, the plots may be difficult to interpret if there are 
+more than two features. The general syntax for plotting is: 
+
+```{r eval=F}
+plot(model, dataframe, x1~x2, slice=list(x3=___, x4=___, ...))
+```
+The function inputs are: 
+
+* *model* is the name of the SVM model (i.e. the best model chosen after cross-validation)
+* *dataframe* is the name of the data frame where the data is stored 
+* *x1* and *x2* are features. If there are only 2 features in the model, it is not necessary to specify them here. 
+* *slice* is an optional argument that fixes the values for all features except x1 and x2. That is, the plot will 
+show the decision boundary with the assumption that every observation has the same value of x3, x4, etc. 
++ If there are only 2 features in the model, there is no need to specify slice 
++ If there are more than 2 features, slice is optional. The default value for all features is 0
+
+Each data point is either red or black, depending on its class. Support vectors are represented with crosses. 
+
+Because it is difficult to project higher-dimensional space into 2 dimensions (which is what slice is doing), SVM 
+plots may be difficut to interpret if there are more than 2 features. 
+
+### Comprehensive Example 
+The goal of this exercise is to use a support vector classifier and support vector machines (SVMs) to predict whether 
+a car will get high or low gas mileage. 
+To do so, we will use the Auto dataset from the ISLR library. The dataset contains 392 observations of 9 variables.
+
+```{r svm_example}
+# Prepare environment 
+rm(list=ls())
+library(ISLR) #Auto data
+library(e1071) #SVM functions
+data(Auto)
+
+# Code response as a binary factor (required for SVMs)
+## determine whether each car's MPG is greater than the median for the data 
+medianMPG <- median(Auto$mpg) #median MPG 
+Auto$binaryMPG <- as.factor(Auto$mpg > medianMPG)
+
+# Remove variables 
+## Numeric MPG is replaced with binaryMPG
+## name is a string that will introduce many unwanted coefficients 
+Auto <- subset(Auto, select=-c(mpg, name))
+
+# Scale data 
+## This could also be done with scale=True in the model 
+Auto$cylinders <- scale(Auto$cylinders)
+Auto$displacement <- scale(Auto$displacement)
+Auto$horsepower <- scale(Auto$horsepower)
+Auto$weight <- scale(Auto$weight)
+Auto$acceleration <- scale(Auto$acceleration)
+Auto$year <- scale(Auto$year)
+Auto$origin <- scale(Auto$origin)
+
+# SVC Model 
+## Perform cross-validation with different values of the cost parameter 
+set.seed(12)
+tune.out <- tune(svm, binaryMPG~., data=Auto, kernel='linear', 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+summary(tune.out)
+
+## Get the best cross-validated model 
+bestmod <- tune.out$best.model
+summary(bestmod)
+## Best model has cost of 0.01 and 166 support vectors 
+## It misclassifies 9.17% of the observations 
+
+## Show model predictions for each data point
+yhat <- predict(bestmod, newdata = subset(Auto, select=-c(binaryMPG))) #model only accepts features, not the Y variable
+table(predict=yhat, truth=Auto$binaryMPG) #confusion matrix 
+
+## Plot (more than 2 features: not recommended)
+plot(bestmod, Auto, weight~acceleration) 
+plot(bestmod, Auto, weight~acceleration, slice=list(displacement=-0.5, 
+                                               horsepower=-0.5, 
+                                               year=2,
+                                               cylinders=0,
+                                               origin=0))
+
+# Polynomial SVM
+## Do cross-validation to find best combination of cost and degree
+polysvm <- tune(svm, binaryMPG~., data=Auto, kernel='polynomial', 
+                ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100), 
+                            degree=c(2,3,4,5)))
+summary(polysvm) 
+
+## Pick best polynomial model 
+bestpoly <- polysvm$best.model
+summary(bestpoly)
+
+# Radial SVM
+## Do cross-validation to find best combination of cost and gamma
+radsvm <- tune(svm, binaryMPG~., data=Auto, kernel='radial', 
+                ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100), 
+                            gamma=c(0.5,1,2,3,4)))
+summary(radsvm) 
+
+## Pick best radial model 
+bestrad <- radsvm$best.model
+summary(bestrad)
+```
+

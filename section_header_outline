@@ -1,0 +1,17 @@
+The goal of this study guide is to create a document that's easy to reference, both during an exam and in our professional lives. 
+
+-Summary/description: What is this model? Is it supervised or unsupervised? Regression or classification? What does it do to the data? 
+
+-When to use the model: What kind of data do you need? What kind of data give the best results? What’s the advantage of using this technique instead of a different one? 
+
+-Model code and inputs: How do you define a model? Please include the R syntax and a brief description of EVERY input parameter. 
+
+-Model tests: How do you choose the best model? (Cross-validation? One-standard-deviation rule? Anova?) How do you know that the model you 
+choose is the best one? Please include R syntax and descriptions of the parameters. 
+
+-Model predictions: How do you use the model to make predictions? How do you assess the predictions? (Confusion matrix? MSE?) Again, 
+include the R syntax and a description of the parameters. 
+
+-Model plots: How do you visualize the model? What features of the plots are important? Include R syntax and a description of the parameters. 
+
+-Comprehensive example: show an example of all of the above in R. Comment each line/block of code, so it’s clear what’s going on. 

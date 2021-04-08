@@ -2058,3 +2058,255 @@ bestrad <- radsvm$best.model
 summary(bestrad)
 ```
 
+
+
+## Principal Component Analysis {.tabset}
+Author: Genevieve Riley
+
+
+
+### Summary/description
+**Principal Component Analysis (PCA)** is an _unsupervised_ type of learning. 
+
+* PCA is a **dimension reduction technique.** PCA uses feature extraction to reduce dimensions.
+  + That means, PCA is a method to reduce a high number of features, p, down to only the ones contributing most significantly to explaining some response variable, Y. 
+* Narrowing down features (ie X variables) is called dimension reduction.
+  + Reducing dimensions is important to avoid **overfitting.**
+  + Unlike _feature elimination_, which entirely drops input variables of low importance, such as lasso or forward/backwards selection, _feature extraction_ will make **new variables which are combinations of X_features.**
+  + These "new variables" are (you guessed it!) the principal components!!!
+  + Principal components are _linear combinations of x features._
+  + PCA is similar to ridge regression's technique of choosing variables, because we do not get rid of variables; we simply _reduce weight of variables depending on importance._
+  + Other dimension reduction techniques we've seen in chapter 6: ridge, lasso, forward/backwards selection...
+* Since this is unsupervised, we have no Y variable. So, how do we know if a variable is important?!
+  + We make an assumption that **variables with higher variance have a greater ability to explain data.**
+* How do we know if a principal component has higher or lower variance?!
+  + Using a little linear algebra magic...
+
+
+
+### When to employ this method/model
+PCA is useful for...
+
+1. Data Visualization
+  + Visualize relationship between variables
+  + Do variables have positive or negative relationship? No relationship?
+2. Dimension reduction before supervised learning
+  + When you have _tons_ of features and want to identify just the important/relevant features before running a supervised model.
+3. You don't care about interpretability of the variables
+  + Since PCs are combinations of the Features, it's not clear cut how to interpret them
+  + If you just want a higher performing model that runs faster from having fewer features, this is a great option
+
+
+
+
+### Model Code and Inputs
+PCA is done using the **prcomp()** function from the **stats** library. 
+
+* Arguments:
+  + x = a numeric or complex matrix (or data frame) which provides the data for the principal components analysis.
+  + retx = Return X; a logical value indicating whether the rotated variables should be returned. Default = TRUE 
+  + center = a logical value indicating whether the variables should be shifted to be zero centered. Default = TRUE
+  + scale = a logical value indicating whether the variables should be scaled to have unit variance before the analysis takes place. Default = FALSE
+  + tol = 	
+a value indicating the magnitude below which components should be omitted. Default = NULL
+  + rank = optionally, a number specifying the maximal rank, i.e. maximal number of principal components to be used. Default = NULL
+
+The syntax is: 
+
+``` {r eval=F}
+library(stats)
+#   pr.model <- prcomp(x, retx = TRUE, center = TRUE, scale. = FALSE,
+          #tol = NULL, rank. = NULL))
+```
+
+The main parameters we care about are:
+
+* x
+* center
+* scale
+
+
+### Model Tests
+PCA has _no tuning or testing per se,_ ; instead, we need to pick **the best number of Principal Components to include.**
+
+* How do we choose the number of principal components?
+* **ANSWER by plotting the PVE!**
+
+What is PVE?
+
+* PVE = **Percent of Variance Explained**
+* each principal component has a PVE
+* principal components are listed in order of pve
+* therefore, the **first principal component has the highest pve**
+
+How to find PVE?
+
+1. Call prcomp() on data
+2. Use $sdev on model 
+    + returns the standard devation of the _principal components_
+3. Square the sdevs of the principal components
+    + This returns variance, because sd^2 = variance
+4. Find total variance
+5. Divide principal component variance/total variance
+
+
+How do we choose the number of Principal Components?
+
+* See where the additional variance explained is insignificant OR
+* When percent explained meets a threshold
+  + Ex: choose the minimum number of principal components that explains at least 90% of variance
+
+
+### Plots
+
+Plot the PVE to see **how many principal components to include**
+
+* PLOT 1: regular plot of PVE of each of 4 principal components
+* PLOT 2: cumulative sum of PVE
+* Interpretation: How do we use this is choose PVE?
+  + Choose PVEs that explain **most of the variance**
+  + Ans: We would likely choose first 3 PCs
+```{r eval = F}
+plot(pve, xlab = "Principal Component",
+     ylab = "Proportion of Variance Explained",
+     ylim = c(0,1), type = 'b')
+plot(cumsum(pve), xlab = "Principal Component",
+     ylab = "Cumulative Proportion of Variance Explained",
+     ylim = c(0,1), type = 'b')
+     
+```
+
+First 3 principal components contain roughly 95% of the variance. Even 2 principal components explains about 87% of variance which is substantial! 
+ 
+ * Choose PVEs based on a percent of variance threshold OR judgment
+ * If threshold is explaining 90% variance, would choose 3 PCs
+ 
+Additional plot: 
+** Biplot of first 2 principal components**
+
+* Use 2 principal components since it's easier to visualize 2D than 3D+
+
+```{r eval = F}
+biplot(pr.out, scale = 0)
+```
+
+### Comprehensive Example 
+
+
+Problem: 
+**Use PCA to determine which principal components are important.**
+
+1. Choose the minimum number of PCs that ensures 90% of variance is explained
+2. Display the first 5 principal component scores
+3. Display the eigenvectors that transform the scaled data
+4. Plot the cumulative PVE
+
+
+``` {r eval=F}
+library(stats)
+
+data <- USArrests          # load data
+scaled.data <- scale(data) # center and scale
+class(scaled.data)         # ensure data is matrix
+
+
+# 1. Call prcomp() 
+pr.out <- prcomp(scaled.data, scale. = TRUE)   # can't hurt to set scale=TRUE, even if already scaled
+
+# 2. Use $sdev
+pr.sd <- pr.out$sdev
+
+# 3. Square sdevs 
+pr.var <- pr.sd^2
+
+# 4. Find total variance
+pr.sum.var <- sum(pr.var)
+
+# 5. Divide pc var/total var
+(pve <- pr.var/pr.sum.var)
+
+
+
+## display first 5 scores
+pr.out$x[1:5]
+
+## display eigenvectors that transform the scaled data
+pr.out$rotation
+
+## plot cumulative PVE
+plot(cumsum(pve), type = 'b')
+abline(h = 0.9)
+
+
+
+```
+
+**The results are in!** Notice that PVEs are in descending order...
+
+* [1] 0.62006039 0.24744129 0.08914080 0.04335752
+
+* How do we interpret the results?
+* The 1st PC contains 62% of variance, 2nd has 24.7%, 3rd has 8% and 4th has 4%
+* all PVE add to 100%...intuitively...can't have a pie that adds to > 100% unless you're the media
+
+**Question answers:**
+
+1. We see that first 3 principal components explain at least 90%, so 3 is sufficient.
+2. First 5 pc scores are found using $x from pca model
+3. eigenvectors that transform data are found using $rotation from pca model
+4. Plot is above
+
+### So...Eigenvectors!
+
+Eigenvectors are the values found using $rotation
+
+* They are labeled **rotation** because they are the values that reorient the (scaled) data points!
+* The scaled data * rotation = scores
+* scores are found using the $x operator
+* By now, perhaps you see that **scores (i.e. $x) = $rotation * scaled data**
+
+**Proof in R that $rotation * scaled data = $x **
+
+```{r eval = F}
+
+# 1.
+calculated.scores = scaled.data%*%pr.out$rotation # matrix multiplication
+calculated.scores[1:5]
+
+## ANS [1] -0.9756604 -1.9305379 -1.7454429  0.1399989 -2.4986128
+# 2.
+model.scores = pr.out$x[1:5]
+model.scores[1:5]
+
+## ANS [1] -0.9756604 -1.9305379 -1.7454429  0.1399989 -2.4986128
+# ta da
+```
+
+### PCA Q & yAy
+
+1. PCA is:        supervised/unsupervised
+2. Every record or observation has an:        eigenvalue/score
+3. The amount of variance explained by a principal component is called the        eigenvalue/eigenvector
+4. Another name for the coefficients in a principal component is:        scores/loadings
+5. Another name for the eigenvectors is:       scores/loadings
+6. We find the loadings using pca.model$:        x/rotation
+7. how many principal components are in a data set with 4 features and 50 observations?:        4/50
+  + recall: number of PC's = minimum of n-1 and p
+8. We scale the variables using scale = TRUE so that:     mean is 1, sd is 0/ mean = 0, sd = 1
+9. Principal components are linear combinations of:       X variances/ X features
+
+
+### Q & yAy Answers
+1. unsupervised
+2. score 
+3. eigenvalue
+4. loadings
+5. loadings
+6. $rotation
+7. 4 
+  +  min(50-1, 4) = 4
+8. mean = 0, sd = 1
+9. X features
+
+
+

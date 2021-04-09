@@ -2310,3 +2310,183 @@ model.scores[1:5]
 
 
 
+
+
+## K-Means Clustering {.tabset}
+Author: Mr. Justin Pender
+
+
+
+### Summary/description
+***K-Means Clustering*** is a form of *unsupervised learning*. It involves partitioning data into K distinct, non-overlapping parts.
+
+* The value for K must be set manually, and the algorithm will sign each observation to exactly one of the K clusters.
+* The goal of K-means clustering is to reduce *within-cluster variation* as much as possible.
+  + *Within-cluster variation* is calculated by squaring the Euclidean distance. It is the sum of all the pairwise squared Euclidian distances between all observations in the *k*th cluster. 
+  + The K-Means clustering algorithm finds the optimal partitioning of observations into *K* clusters such that the sum of within-cluster variatons is minimized. 
+* The K-Means clustering algorithm follows these steps: 
+  1. Randomly assign a number, from 1 to *K*, to each of the observations.
+  2. Iterate until the cluster assignments stop changing.
+      (a) Compute the *centroid* for each cluster: the vector of feature means for observations in that cluster. 
+      (b) Assign each observation to the cluster with the closest centroid.
+* The K-Means algorithm cannot guarantee a global optimum. As such, it is important to run the algorithm multiple times from different random initial configurations. 
+
+
+### When to employ this method/model
+
+K-means clustering is especially useful when no clear predictor variable is known. It is a powerful form of unsupervised learning, allowing data to be grouped. It can be used on its own, but it is especially useful as a preprocessing step for supervised learning (for example, using the cluster ID as a feature). It can also be used for pattern recognition, customer segmentation, and as a way to reduce data size (by focusing on a single cluster at a time).
+
+
+### Model Code and Inputs
+The **kmeans()** function in base R is used to perform clustering.
+
+* A sample function looks like this:
+  + kmeans(dataset, centers, nstart=10)
+  + dataset: a numeric matrix of data
+  + centers: the number of clusters, *K*
+  + nstart: The number of random sets to be chosen to start the k-means algorithm
+    + This is the number of initial allocations of observations to clusters to run
+    + nstart is usually set to either 20 or 50
+* Outputs
+  + $cluster: gives cluster assignment of each observation
+  + $tot.withinss: gives the within-cluster sum of squares
+  + $withinss: gives the within-cluster sum of squares of each cluster
+  + $betweenss: gives residuals between clusters
+  + $centers: gives the cluster centers (a mean for each feature for each cluster)
+
+
+### Model Tests
+We want to tune the model to the optimal number of clusters. This can be done with a for loop. Use a scree plot to display results. The goal of K-means is still to minimize the sum of within-cluster variance. 
+``` {r eval=F}
+# Create a vector to store 15 totwithiness scores
+kmax <- 15
+totwithiness<-rep(0,kmax)
+
+# Tune k = 1 to 15
+for (k in 1:kmax)
+{
+  totwithiness[k] = kmeans(MyDF, 
+                           k, # number of clusters
+                           nstart=25,
+                           iter.max = 15 # maximum number of iterations allowed
+  )$tot.withinss
+}
+
+# Scree plot: tot.withinss by k
+plot(1:kmax, totwithiness,
+     type="b", pch = 19, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares",
+     xlim=c(0,kmax+1),)
+```
+
+### Plots 
+``` {r eval=F}
+plot(MyDF, col=(km.out$cluster+1)
+text(MyDF, labels=km.out$cluster,cex=0.9, font=10,pos=4)
+```
+
+* Use cluster number as color code
+* adding labels to each cluster
+  
+We can also use the **fviz_cluster()** function from the **factoextra** package:
+``` {r eval=F}
+fviz_cluster(km.out, data = df)
+```
+
+The scree plot listed in the *Model Tests* section is the other plot that is used for K-means. It is used to visualize within-cluster variation across differing values of K. 
+
+### Comprehensive Example
+
+``` {r eval=F}
+set.seed(2)
+
+# Data setup
+x=matrix(rnorm(50*2), ncol=2) # two columns of X features, 50 records each
+plot(x[,1], x[,2])
+
+# Create more dramatic clusters
+F1=rep(0,50) # Create a new feature F1
+F1[1:25]=x[1:25,1]+3 # Create the first 50% of F1 values by adding 3 to the first 50% of X1
+F1[26:50]=x[26:50,1] # The second 50% of F1 is the same as X1
+MyDF = data.frame(F1,x) # Add F1 and x matrix together as the dataframe MyDF
+plot(MyDF$X1, MyDF$F1) # See how F1 is related to X1
+
+F2=rep(0,50) # Create a new feature F2
+F2[1:25]=x[1:25,2]-4 # Create the first 50% of F2 values by subtracting 4 from the first 50% of X2
+F2[26:50]=x[26:50,2] # The second 50% of F2 is the same as X2
+MyDF = data.frame(F2,MyDF) # Add F2 to the MyDF dataframe
+plot(MyDF$F2, MyDF$X2) # See how F2 is related to X2
+
+# Now we can use F1 & F2 in MyDF as our dataset
+MyDF=subset(MyDF, select=-c(X1,X2)) # Remove X1 & X2
+attach(MyDF)
+plot(F1, F2)
+
+# K-Means Clustering
+km.out2=kmeans(MyDF, 
+               centers = 2, # K = 2 (number of cluster centers)
+               nstart=20) # run kmean() with multiple initial cluster assignments (recommended)
+# 20 sets of random rows are selected as initial centers 
+
+# See cluster assignment of each record
+km.out2$cluster # Output differs slightly from book, because MyDF is a dataframe, but x is a matrix
+
+# See total within-cluster sum of squares
+km.out2$tot.withinss
+
+# See within-cluster sum of squares of each cluster
+km.out2$withinss
+
+km.out2$betweenss
+km.out2$centers
+
+# They should add up to be the same as tot.withinss
+(sum(km.out2$withinss))
+
+plot(MyDF, 
+     col=(km.out$cluster+1), # Use cluster number as color code
+     main="K-Means Clustering Results with K=2", xlab="", ylab="", pch=20, cex=2)
+
+set.seed(4)
+
+km.out3 = kmeans(MyDF,
+                 3,# centers (K) = 3
+                 nstart=20)
+
+km.out3
+km.out3$tot.withinss
+
+km.out3_1 = kmeans(MyDF,
+                   3,
+                   nstart=1) # smaller nstart can produce less optimal outcome
+km.out3_1$tot.withinss
+
+
+plot(MyDF, 
+     col=(km.out$cluster+1), 
+     main="K-Means Clustering Results with K=3", xlab="", ylab="", pch=20, cex=2)
+
+#######################################################
+# Tune the optimal number of clusters (k)
+
+# Create a vector to store 15 totwithiness scores
+kmax <- 15
+totwithiness<-rep(0,kmax)
+
+# Tune k = 1 to 15
+for (k in 1:kmax)
+{
+  totwithiness[k] = kmeans(MyDF, 
+                           k, # number of clusters
+                           nstart=25,
+                           iter.max = 15 # maximum number of iterations allowed
+  )$tot.withinss
+}
+
+# Scree plot: tot.withinss by k
+plot(1:kmax, totwithiness,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```

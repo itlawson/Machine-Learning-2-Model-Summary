@@ -2058,7 +2058,6 @@ bestrad <- radsvm$best.model
 summary(bestrad)
 ```
 
-
 ## ROC Curves {.tabset}
 Author: Alex Russett
 
@@ -2079,7 +2078,7 @@ mostly separable.
 ### Model Code and Inputs
 SVC and SVM models are created using the svm() function from the e1071 library. The syntax is: 
 
-``` {r}
+``` {r eval=T}
 set.seed(1)
 x <- matrix(rnorm(200*2), ncol = 2)
 x[1:100, ] <- x[1:100, ] + 2
@@ -2096,21 +2095,21 @@ Plotting the data shows that the class boundary is non-linear.
 
 Next, the data is split into a training and a testing set:
 
-``` {r}
+``` {r eval=T}
 train.index <- sample(1:nrow(dat),nrow(dat)*.5)
 train <- dat[train.index,]
 test <- dat[-train.index,]
 ```
 
-### ROC (Receiver Operating Characteristic) Curve Generation
+### ROC (Receiver Operating Characteristic) Curve Generation {.tabset}
 Load the "ROCR" and "e1071" libraries.
 
-``` {r}
+``` {r eval=T}
 library(ROCR)
 library(e1071)
 ```
 
-### Function Inputs / Paramaters
+#### Function Inputs / Paramaters
 
 Next, a function is created to generate an ROC plot. The function inputs are "pred" and "truth". 
 
@@ -2122,7 +2121,7 @@ Next, a function is created to generate an ROC plot. The function inputs are "pr
 
 **"Perf"** evaluates performance using **TPR (true positive rate)** and **FPR (false positive rate)**.
 
-``` {r}
+``` {r eval=T}
 rocplot =function(pred , truth , ...){
   predob = prediction(pred , truth, label.ordering = c(2,1))    
   perf = performance(predob , "tpr", "fpr")
@@ -2134,7 +2133,7 @@ Next, we will obtain fitted values, which are numerical scores used to obtain cl
 
 In this exercise, we will be comparing models with a gamma set at 2 and another set at 50. The model with gamma set at 2 will be called "svmfit.opt" and the one with 50 will be called "svmfit.flex".
 
-``` {r}
+``` {r eval=T}
 svmfit.opt <- svm(y~., data = train, kernel = 'radial', gamma = 2, cost = 1, decision.values = TRUE)
 fitted.g2.train <- attributes(predict(svmfit.opt, train, decision.values=TRUE))$decision.values
 
@@ -2155,7 +2154,7 @@ par(mfrow = c(1, 1))
 par(pty = "s")       # plot as a square
 
 rocplot(fitted.g2.train,train$y,main="Train Data", col = "blue")
-rocplot(fitted.g50.train,train$y,add=TRUE,col="red ")         # add = TRUE means add to existing graph
+rocplot(fitted.g50.train,train$y, add=TRUE, col="red")         # add = TRUE means add to existing graph
 
 legend(.4, .3, legend=c("Gamma = 2", "Gamma = 50"),col=c("blue", "red"), lty=1:1, cex=0.8)
 ```
@@ -2163,7 +2162,7 @@ legend(.4, .3, legend=c("Gamma = 2", "Gamma = 50"),col=c("blue", "red"), lty=1:1
 
 The training model with a gamma of 50 produced more accurate results. We know this because the red line hugs the upper left corner of the graph, meaning that the true positives are maximized.
 
-### Test Data
+#### Test Data
 Next, we will fit the values for the test set and plot the ROC curves.
 
 ```{r}
@@ -2180,7 +2179,7 @@ legend(.5, .5, legend=c("Gamma = 2", "Gamma = 50"),col=c("blue", "red"), lty=1:1
 
 The model where gamma = 2 produced the best results.
 
-### Another ROC plotting method
+#### Another ROC plotting method
 
 Another way to plot the ROC curves is using the "pROC" library. The inputs are the same as the "rocplot" function inputs. However, one difference is adding "direction". With direction = ">", each observation will be considered positive if it is less than 0 and negative otherwise. If you change the direction, you reverse the positive and negative predictions and therefore reverse the ROC curve.
 
@@ -2216,7 +2215,6 @@ legend(.5, .2, legend=c("Gamma = 2", "Gamma = 50"),col=c("blue", "red"), lty=1:1
 ```
 
 As we saw earlier, a gamma of 50 works best for the train data and a gamma of 2 works best for the test data.
-
 
 
 ## Principal Component Analysis {.tabset}

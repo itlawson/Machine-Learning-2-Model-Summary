@@ -2647,3 +2647,220 @@ plot(1:kmax, totwithiness,
      xlab="Number of clusters K",
      ylab="Total within-clusters sum of squares")
 ```
+
+
+## Hierarchical Clustering {.tabset}
+Team 9: Thomas Trankle, Jaida Clarke, Jill van den Dungen, Andrew Tremblay
+
+
+
+### Summary/description
+
+***H-Clustering***, another *unsupervised learning* technique, has a few advantages over K-Means Clustering: For one, the number of clusters does not need to be pre-specified. Rather, it is a bottom up construction, where each observation starts in its own cluster. From there, clusters are continuously made and/or combined by a specified linkage method until every observation belongs to the same cluster. This process is defined and visualized in a *dendrogram*, a tree-based representation of the observations, cluster groubings and the respective dissimilarity. Again, hierarchical clustering is called *bottom-up* or *agglomerative* clustering, because the dendrogram (which looks like an upside-down tree) is constructed from the many leaves at the bottom *fusing* one-by-one until they form a single "trunk" at the top. This allows us to not have define the amount of clusters before the algorithm. Instead, we can visually inspect the dendogram to determine where the most appropriate amount of clusters. This is where we choose to cut the tree.
+
+Interpreting the dendrogram is quite intuitive; the height of each fusion point corresponds to how similar the two observations are, which means that those observations at the bottom of the tree which fuse right away are more similar than those closer to the trunk at the top.
+While greater height between the fusion points of observations denotes greater dissimilarity, there is *no significance* to their horizontal distance.
+
+Clusters are formed by making cuts horizontally across the tree. The further down (towards the leaves) a tree is cut, the more clusters that will result. Therefore, the height of the cut to the dendrogram is analogous to the role of K in K-Means Clustering.
+
+*Hierarchical* refers to the fact that clusters obtained from a cut at a given height are necessarily contained within the resulting clusters of cuts made at greater heights. In other words, they are *nested*.
+
+The algorithm for the ***H-Clustering*** model is very simple:
+* A *dissimilarity measure* (usually Euclidean distance) between each pair of observations is established.
+  + *Linkage* defines the dissimilarity between groups of observations. The four most common types of linkage are:
+    +   Complete- The largest dissimilarity between a pair of observations when one observation comes from each cluster
+    +   Single- The smallest dissimilarity
+    +   Average- Mean intercluster dissimilarity
+    +   Centroid- Dissimilarity measure between the geographic centers of the pair of clusters
+    
+* Each observation begins as its own cluster, and each cluster is then fused to the most similar cluster iteratively until all observations belong to a single cluster.
+
+In place of Euclidean distance-based dissimilarity measures, correlation-based distance can be used. This is useful when features have varying magnitudes or when the shape of the data is highly correlated, since unsupervised learning is very sensitive to scaling.
+
+Linkage Characteristics:
+ * Complete
+  + Maximal intercluster dissimilarity. Compute all pairwise dissimilarities between the observations in cluster A and the observations in cluster B, and record the largest of these dissimilarities
+ * Single
+  + Minimal intercluster dissimilarity. Compute all pairwise dissimilarities between the observations in cluster A and the observations in cluster B, and record the smallest of these dissimilarities. Single linkage can result in extended, trailing
+clusters in which single observations are fused one-at-a-time
+ * Average
+  + Mean intercluster dissimilarity. Compute all pairwise dissimilarities between the observations in cluster A and the observations in cluster B, and record the average of these dissimilarities
+ * Centroid
+  + Dissimilarity between the centroid for cluster A (a mean vector of length p) and the centroid for cluster B. Centroid linkage can result in undesirable inversions. Whereby inversion two clusters are fused at a height below either of the individual clusters in the dendrogram. This can lead to difficulties in visualization as well as in interpretation of the dendrogram.
+
+Average and complete linkage are generally preferred over single linkage, as they tend to yield more balanced dendrograms.
+
+### When to employ this method/model
+
+Hierarchical Clustering is very similar to K-Means Clustering, except the number of clusters is not needed as an input. Additionally, the dendrogram is useful for visualizing the overall similarity of the data, and for estimating the appropriate number of clusters. Both K-Means and H-Clustering will assign each observation to a cluster, which makes them sensitive to outliers. It's best to experiment with different unsupervised models and parameters to observe patterns that consistently emerge. Most times, clustering is a good starting point for analysis.
+
+
+### Model Code and Inputs
+
+We begin with a simple simulated example in which there are **truly two clusters** in the
+data; the first 25 observations have a mean shift relative to the next 25
+observations. This makes sure we have to distinct clusters in our data.
+
+``` {r}
+x <- matrix(rnorm (50*2), ncol=2) # Create a 50 X 2 matrix with samples from a 
+                               # normal distribution
+
+x[1:25,1] <- x[1:25,1]+3   # Move half the points 3 units right and 
+x[1:25,2] <- x[1:25,2]-4   # 4 units down
+```
+
+The <span style="color:red">**hclust()**</span> function implements hierarchical clustering in R. In the following example, we use the data from above to plot the hierarchical clustering dendrogram using complete, single, and average linkage clustering, with Euclidean distance as the dissimilarity measure.
+
+We begin by clustering observations using complete linkage. The <span style="color:red">**dist()**</span> function is used to compute the 50 × 50 inter-observation Euclidean distance matrix.
+
+```{r}
+hc.complete <- hclust(dist(x), method="complete") # tells type of cluster method, type of distance used, and total data points
+```
+
+We could just as easily perform hierarchical clustering with average or single linkage instead:
+
+```{r}
+hc.average <- hclust(dist(x), method ="average")
+hc.single <- hclust(dist(x), method ="single")
+hc.centroid <- hclust(dist(x), method ="centroid")
+```
+
+We can now plot the dendrograms obtained using the usual <span style="color:red">**plot()**</span> function.The numbers at the bottom of the plot identify each observation.
+
+Babu, M. M., & Grant, R. (n.d.). Computational Genomics. Horizon Press. (cite for image)
+
+```{r, echo=FALSE,out.height="40%", fig.cap="https://www.mrc-lmb.cam.ac.uk/genomes/madanm/microarray/chapter-final.pdf"}
+knitr::include_graphics("./linkage.png")
+```
+
+```{r pressure}
+par(mfrow=c(1,3))
+plot(hc.complete ,main="Complete Linkage ", xlab="", sub="",
+cex=.9, col = "deepskyblue") # produces a cleaner plot that is easy to follow
+
+plot(hc.average , main="Average Linkage", xlab="", sub="",
+cex=.9, col = "goldenrod3")
+
+plot(hc.single , main="Single Linkage", xlab="", sub="",
+cex=.9, col = "darkseagreen") # produces branches for every single observation. Not the most comprehensive heirachrical plotting method
+
+plot(hc.centroid , main="Centroid Linkage", xlab="", sub="",
+cex=.9, col = "purple") 
+```
+
+### Model Tests & Plots
+
+To determine the cluster labels for each observation associated with a given cut of the dendrogram, we can use the <span style="color:red">**cutree()**</span> function:
+
+```{r}
+cutree(hc.complete , 2) # Shows complete separation of clusters classes
+plot(hc.complete ,main="Complete Linkage ", xlab="", sub="",
+cex=.9)
+abline(h= 7, col = "red", lty = "dashed")
+```
+
+```{r}
+cutree(hc.average , 2)
+plot(hc.average , main="Average Linkage", xlab="", sub="",
+cex=.9)
+abline(h= 4, col = "red", lty = "dashed")
+```
+
+```{r}
+cutree(hc.single , 2)
+plot(hc.single , main="Single Linkage", xlab="", sub="",
+cex=.9)
+abline(h= 1.39, col = "red", lty = "dashed")
+```
+
+For this data, complete and average linkage generally separate the observations into their correct groups. However, single linkage identifies one point as belonging to its own cluster. A more sensible answer is obtained when four clusters are selected, although there are still two singletons.
+
+
+```{r}
+cutree(hc.single , 4)
+plot(hc.single , main="Single Linkage", xlab="", sub="",
+cex=.9)
+abline(h= 1.25, col = "red", lty = "dashed")
+
+```
+
+To scale the variables before performing hierarchical clustering of the observations, we use the <span style="color:red">**scale()**</span> function:
+
+```{r,out.width="110%"}
+xsc=scale(x)
+plot(hclust(dist(xsc), method ="complete"), main=" Hierarchical
+Clustering with Scaled Features ")
+```
+
+Correlation-based distance can be computed using the <span style="color:red">**as.dist()**</span> function, which converts an arbitrary square symmetric matrix into a form that the <span style="color:red">**hclust()**</span> function recognizes as a distance matrix. However, this only makes sense for data with at least three features since the absolute correlation between any two observations with measurements on two features is always 1. Hence, we will cluster a three-dimensional data set
+
+```{r,out.width="110%"}
+x=matrix(rnorm (30*3), ncol=3)
+dd=as.dist(1-cor(t(x)))
+plot(hclust(dd, method ="complete"), main=" Complete Linkage
+with Correlation -Based Distance", xlab="", sub ="")
+```
+
+### Comprehensive Example
+***Applied Exercise No. 9***
+
+We will be using the <span style="color:red">**USArrests**</span> data set from
+the *ISLR* library.
+
+```{r}
+library(ISLR)
+```
+
+#### a.) Using hierarchical clustering with complete linkage and Euclidean distance, cluster the states.
+
+```{r,out.width="120%"}
+set.seed(5082)
+hcluster.complete <- hclust(dist(USArrests), method = "complete")
+plot(hcluster.complete)
+```
+
+#### b.) Cut the dendrogram at a height that results in three distinct clusters. Which states belong to which clusters?
+```{r}
+# cutree(tree, k = NULL, h = NULL) , can speicify clusters (k) or dissimilarity
+# height (h).
+cutree(hcluster.complete, k = 3)
+```
+
+```{r}
+table(cutree(hc.complete, 3))
+```
+
+#### c.) Hierarchically cluster the states using complete linkage and Euclidean distance, after scaling the variables to have standard deviation one.
+
+```{r,out.width="120%"}
+# First we scale the data -- similar to PCR
+scaledData <- scale(USArrests)
+hscaled.complete <- hclust(dist(scaledData), method = "complete")
+plot(hscaled.complete)
+```
+
+
+#### d.) What effect does scaling the variables have on the hierarchical clustering obtained? In your opinion, should the variables be scaled before the inter-observation dissimilarities are computed? Provide a justification for your answer.
+
+```{r}
+cutree(hscaled.complete, 3)
+```
+
+```{r}
+table(cutree(hscaled.complete, 3))
+```
+
+We can compare the difference between scaled and unscaled versions.
+
+```{r}
+table(cutree(hscaled.complete, 3), cutree(hcluster.complete, 3))
+```
+
+
+Observations from scaling the variables:
+
+* The max height of the dendrogram obtained from hierarchical clustering becomes smaller. 
+* From a cursory glance, it doesn’t effect the bushiness of the tree obtained. 
+* Affects the clusters obtained from cutting the dendrogram into 3 clusters.
+
+The data should be standardized because the data measured has different units (UrbanPop compared to other three columns).

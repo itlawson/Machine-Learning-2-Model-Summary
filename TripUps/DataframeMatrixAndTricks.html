@@ -3041,7 +3041,7 @@ y.test =y[-train]</code></pre>
 <h3>SVM</h3>
 <pre class="r"><code>### MATRIX ####
 set.seed(12)
-tune.outM &lt;- tune(svm, x.train, y.train, kernel=&#39;radial&#39;, 
+tune.outM &lt;- tune(svm, x.train, y.train, kernel=&#39;linear&#39;, 
                  ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
 summary(tune.outM)</code></pre>
 <pre><code>## 
@@ -3051,22 +3051,22 @@ summary(tune.outM)</code></pre>
 ## 
 ## - best parameters:
 ##  cost
-##     1
+##   0.1
 ## 
-## - best performance: 0.1746759 
+## - best performance: 0.1646605 
 ## 
 ## - Detailed performance results:
 ##    cost     error dispersion
-## 1 1e-03 0.3802932 0.07896726
-## 2 1e-02 0.3802932 0.07896726
-## 3 1e-01 0.1833642 0.04554528
-## 4 1e+00 0.1746759 0.04742226
-## 5 5e+00 0.1871296 0.05422612
-## 6 1e+01 0.1971142 0.04552327
-## 7 1e+02 0.2095525 0.05747952</code></pre>
+## 1 1e-03 0.3080247 0.07367268
+## 2 1e-02 0.1758951 0.04257276
+## 3 1e-01 0.1646605 0.04579079
+## 4 1e+00 0.1683796 0.04662716
+## 5 5e+00 0.1671142 0.04763266
+## 6 1e+01 0.1658796 0.04942537
+## 7 1e+02 0.1671142 0.04977151</code></pre>
 <pre class="r"><code>## DATAFRAME ##
 set.seed(12)
-tune.out &lt;- tune(svm, Purchase~ ., data=OJ[train,], kernel=&#39;radial&#39;, 
+tune.out &lt;- tune(svm, Purchase~., data=OJ[train,], kernel=&#39;linear&#39;, 
                  ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
 summary(tune.out)</code></pre>
 <pre><code>## 
@@ -3076,34 +3076,34 @@ summary(tune.out)</code></pre>
 ## 
 ## - best parameters:
 ##  cost
-##     1
+##   0.1
 ## 
-## - best performance: 0.1721605 
+## - best performance: 0.1646605 
 ## 
 ## - Detailed performance results:
 ##    cost     error dispersion
-## 1 1e-03 0.3802932 0.07896726
-## 2 1e-02 0.3802932 0.07896726
-## 3 1e-01 0.1833642 0.04359772
-## 4 1e+00 0.1721605 0.04544422
-## 5 5e+00 0.1846451 0.05224136
-## 6 1e+01 0.1958796 0.04604711
-## 7 1e+02 0.2120525 0.05414223</code></pre>
+## 1 1e-03 0.3130093 0.07762951
+## 2 1e-02 0.1733951 0.04088495
+## 3 1e-01 0.1646605 0.04579079
+## 4 1e+00 0.1683796 0.04662716
+## 5 5e+00 0.1671142 0.04763266
+## 6 1e+01 0.1658796 0.04942537
+## 7 1e+02 0.1671142 0.04977151</code></pre>
 <p>Yay! same-same. Time to predict.</p>
 <pre class="r"><code>## MATRIX ##
 yhatM &lt;- predict(tune.outM$best.model, newdata = x.test) #model only accepts features, not the Y variable
 table(predict=yhatM, truth=y.test)</code></pre>
 <pre><code>##        truth
 ## predict  CH  MM
-##      CH 144  34
-##      MM  12  78</code></pre>
+##      CH 137  31
+##      MM  19  81</code></pre>
 <pre class="r"><code>## DATAFRAME ##
 yhat &lt;- predict(tune.out$best.model, newdata = OJ[-train,]) #model only accepts features, not the Y variable
 table(predict=yhat, truth=OJ[-train,]$Purchase)</code></pre>
 <pre><code>##        truth
 ## predict  CH  MM
-##      CH 144  34
-##      MM  12  78</code></pre>
+##      CH 137  31
+##      MM  19  81</code></pre>
 <p>Test binomial possibility</p>
 <pre class="r"><code># don&#39;t think this is an option 
 set.seed(12)

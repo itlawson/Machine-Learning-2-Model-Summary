@@ -190,13 +190,13 @@ y.test =y[-train]
 ```{r}
 ### MATRIX ####
 set.seed(12)
-tune.outM <- tune(svm, x.train, y.train, kernel='radial', 
+tune.outM <- tune(svm, x.train, y.train, kernel='linear', 
                  ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
 summary(tune.outM)
 
 ## DATAFRAME ##
 set.seed(12)
-tune.out <- tune(svm, Purchase~ ., data=OJ[train,], kernel='radial', 
+tune.out <- tune(svm, Purchase~., data=OJ[train,], kernel='linear', 
                  ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
 summary(tune.out)
 

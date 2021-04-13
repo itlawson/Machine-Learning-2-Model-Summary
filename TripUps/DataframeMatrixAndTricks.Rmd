@@ -62,13 +62,13 @@ model <- svm(x, y)
 ### MATRIX ####
 set.seed(12)
 tune.outM <- tune(svm, AutoMatrix, AutoY, kernel='linear', 
-                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)))
 summary(tune.outM)
 
 ## DATAFRAME ##
 set.seed(12)
 tune.out <- tune(svm, binaryMPG~., data=Auto, kernel='linear', 
-                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)))
 summary(tune.out)
 
 ```
@@ -169,6 +169,8 @@ cex=.9, col = "goldenrod3")
 
 ### Data
 ```{r}
+library(ISLR)
+library(e1071)
 attach(OJ) #OJ dataframe from ISLR
 OJ$Purchase <- as.factor(OJ$Purchase)
 x=model.matrix(Purchase~.,OJ)[,-1]
@@ -188,19 +190,64 @@ y.test =y[-train]
 
 ### SVM
 ```{r}
+# Gamma can cause different answers if undefined
+#          gamma = if (is.vector(x)) 1 else 1 / ncol(x)
+
+# gamma	- parameter needed for all 
+#         kernels except linear (default: 1/(data dimension))
+
+#For Example
+
 ### MATRIX ####
 set.seed(12)
-tune.outM <- tune(svm, x.train, y.train, kernel='linear', 
-                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+tune.outM <- tune(svm,
+                  x.train, 
+                  y.train,
+                  kernel='radial', 
+                  ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)),
+                  tunecontrol = tune.control(sampling = "fix"))
 summary(tune.outM)
 
 ## DATAFRAME ##
 set.seed(12)
-tune.out <- tune(svm, Purchase~., data=OJ[train,], kernel='linear', 
-                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+myDF <- OJ[train,]
+tune.out <- tune(svm, 
+                 Purchase~., 
+                 data=myDF, 
+                 kernel='radial', 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)),
+                 tunecontrol = tune.control(sampling = "fix"))
 summary(tune.out)
 
 ```
+
+This is because the DF still contains the Y variable. If we set gamma ourselves
+then it works the same.
+```{r}
+### MATRIX ####
+set.seed(12)
+tune.outM <- tune(svm,
+                  x.train, 
+                  y.train,
+                  kernel='radial', 
+                  ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100),
+                              gamma = c(0.001, 0.01, 1)),
+                  tunecontrol = tune.control(sampling = "fix"))
+summary(tune.outM)
+
+## DATAFRAME ##
+set.seed(12)
+myDF <- OJ[train,]
+tune.out <- tune(svm, 
+                 Purchase~., 
+                 data=myDF, 
+                 kernel='radial', 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100),
+                             gamma = c(0.001, 0.01, 1)),
+                 tunecontrol = tune.control(sampling = "fix"))
+summary(tune.out)
+```
+
 
 Yay! same-same. Time to predict.
 

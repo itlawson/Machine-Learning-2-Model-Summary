@@ -2833,7 +2833,7 @@ model &lt;- svm(x, y) </code></pre>
 <pre class="r"><code>### MATRIX ####
 set.seed(12)
 tune.outM &lt;- tune(svm, AutoMatrix, AutoY, kernel=&#39;linear&#39;, 
-                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)))
 summary(tune.outM)</code></pre>
 <pre><code>## 
 ## Parameter tuning of &#39;svm&#39;:
@@ -2858,7 +2858,7 @@ summary(tune.outM)</code></pre>
 <pre class="r"><code>## DATAFRAME ##
 set.seed(12)
 tune.out &lt;- tune(svm, binaryMPG~., data=Auto, kernel=&#39;linear&#39;, 
-                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)))
 summary(tune.out)</code></pre>
 <pre><code>## 
 ## Parameter tuning of &#39;svm&#39;:
@@ -3022,7 +3022,9 @@ cex=.9, col = &quot;goldenrod3&quot;)</code></pre>
 <h2>Lets try everything with our good friend OJ</h2>
 <div id="data" class="section level3">
 <h3>Data</h3>
-<pre class="r"><code>attach(OJ) #OJ dataframe from ISLR
+<pre class="r"><code>library(ISLR)
+library(e1071)
+attach(OJ) #OJ dataframe from ISLR
 OJ$Purchase &lt;- as.factor(OJ$Purchase)
 x=model.matrix(Purchase~.,OJ)[,-1]
 y=OJ$Purchase
@@ -3039,71 +3041,178 @@ y.test =y[-train]</code></pre>
 </div>
 <div id="svm-1" class="section level3">
 <h3>SVM</h3>
-<pre class="r"><code>### MATRIX ####
+<pre class="r"><code># Gamma can cause different answers if undefined
+#          gamma = if (is.vector(x)) 1 else 1 / ncol(x)
+
+# gamma - parameter needed for all 
+#         kernels except linear (default: 1/(data dimension))
+
+#For Example
+
+### MATRIX ####
 set.seed(12)
-tune.outM &lt;- tune(svm, x.train, y.train, kernel=&#39;linear&#39;, 
-                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+tune.outM &lt;- tune(svm,
+                  x.train, 
+                  y.train,
+                  kernel=&#39;radial&#39;, 
+                  ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)),
+                  tunecontrol = tune.control(sampling = &quot;fix&quot;))
 summary(tune.outM)</code></pre>
 <pre><code>## 
 ## Parameter tuning of &#39;svm&#39;:
 ## 
-## - sampling method: 10-fold cross validation 
+## - sampling method: fixed training/validation set 
 ## 
 ## - best parameters:
 ##  cost
-##   0.1
+##    10
 ## 
-## - best performance: 0.1646605 
+## - best performance: 0.1529851 
 ## 
 ## - Detailed performance results:
 ##    cost     error dispersion
-## 1 1e-03 0.3080247 0.07367268
-## 2 1e-02 0.1758951 0.04257276
-## 3 1e-01 0.1646605 0.04579079
-## 4 1e+00 0.1683796 0.04662716
-## 5 5e+00 0.1671142 0.04763266
-## 6 1e+01 0.1658796 0.04942537
-## 7 1e+02 0.1671142 0.04977151</code></pre>
+## 1 1e-03 0.3358209         NA
+## 2 1e-02 0.3358209         NA
+## 3 1e-01 0.1716418         NA
+## 4 1e+00 0.1641791         NA
+## 5 5e+00 0.1567164         NA
+## 6 1e+01 0.1529851         NA
+## 7 1e+02 0.1940299         NA</code></pre>
 <pre class="r"><code>## DATAFRAME ##
 set.seed(12)
-tune.out &lt;- tune(svm, Purchase~., data=OJ[train,], kernel=&#39;linear&#39;, 
-                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+myDF &lt;- OJ[train,]
+tune.out &lt;- tune(svm, 
+                 Purchase~., 
+                 data=myDF, 
+                 kernel=&#39;radial&#39;, 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)),
+                 tunecontrol = tune.control(sampling = &quot;fix&quot;))
 summary(tune.out)</code></pre>
 <pre><code>## 
 ## Parameter tuning of &#39;svm&#39;:
 ## 
-## - sampling method: 10-fold cross validation 
+## - sampling method: fixed training/validation set 
 ## 
 ## - best parameters:
 ##  cost
-##   0.1
+##     5
 ## 
-## - best performance: 0.1646605 
+## - best performance: 0.1492537 
 ## 
 ## - Detailed performance results:
 ##    cost     error dispersion
-## 1 1e-03 0.3130093 0.07762951
-## 2 1e-02 0.1733951 0.04088495
-## 3 1e-01 0.1646605 0.04579079
-## 4 1e+00 0.1683796 0.04662716
-## 5 5e+00 0.1671142 0.04763266
-## 6 1e+01 0.1658796 0.04942537
-## 7 1e+02 0.1671142 0.04977151</code></pre>
+## 1 1e-03 0.3358209         NA
+## 2 1e-02 0.3358209         NA
+## 3 1e-01 0.1716418         NA
+## 4 1e+00 0.1641791         NA
+## 5 5e+00 0.1492537         NA
+## 6 1e+01 0.1529851         NA
+## 7 1e+02 0.1902985         NA</code></pre>
+<p>This is because the DF still contains the Y variable. If we set gamma ourselves then it works the same.</p>
+<pre class="r"><code>### MATRIX ####
+set.seed(12)
+tune.outM &lt;- tune(svm,
+                  x.train, 
+                  y.train,
+                  kernel=&#39;radial&#39;, 
+                  ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100),
+                              gamma = c(0.001, 0.01, 1)),
+                  tunecontrol = tune.control(sampling = &quot;fix&quot;))
+summary(tune.outM)</code></pre>
+<pre><code>## 
+## Parameter tuning of &#39;svm&#39;:
+## 
+## - sampling method: fixed training/validation set 
+## 
+## - best parameters:
+##  cost gamma
+##     1  0.01
+## 
+## - best performance: 0.1529851 
+## 
+## - Detailed performance results:
+##     cost gamma     error dispersion
+## 1  1e-03 0.001 0.3358209         NA
+## 2  1e-02 0.001 0.3358209         NA
+## 3  1e-01 0.001 0.3358209         NA
+## 4  1e+00 0.001 0.1791045         NA
+## 5  5e+00 0.001 0.1567164         NA
+## 6  1e+01 0.001 0.1604478         NA
+## 7  1e+02 0.001 0.1604478         NA
+## 8  1e-03 0.010 0.3358209         NA
+## 9  1e-02 0.010 0.3358209         NA
+## 10 1e-01 0.010 0.2052239         NA
+## 11 1e+00 0.010 0.1529851         NA
+## 12 5e+00 0.010 0.1567164         NA
+## 13 1e+01 0.010 0.1604478         NA
+## 14 1e+02 0.010 0.1604478         NA
+## 15 1e-03 1.000 0.3358209         NA
+## 16 1e-02 1.000 0.3358209         NA
+## 17 1e-01 1.000 0.3171642         NA
+## 18 1e+00 1.000 0.1940299         NA
+## 19 5e+00 1.000 0.2126866         NA
+## 20 1e+01 1.000 0.2052239         NA
+## 21 1e+02 1.000 0.2388060         NA</code></pre>
+<pre class="r"><code>## DATAFRAME ##
+set.seed(12)
+myDF &lt;- OJ[train,]
+tune.out &lt;- tune(svm, 
+                 Purchase~., 
+                 data=myDF, 
+                 kernel=&#39;radial&#39;, 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100),
+                             gamma = c(0.001, 0.01, 1)),
+                 tunecontrol = tune.control(sampling = &quot;fix&quot;))
+summary(tune.out)</code></pre>
+<pre><code>## 
+## Parameter tuning of &#39;svm&#39;:
+## 
+## - sampling method: fixed training/validation set 
+## 
+## - best parameters:
+##  cost gamma
+##     1  0.01
+## 
+## - best performance: 0.1529851 
+## 
+## - Detailed performance results:
+##     cost gamma     error dispersion
+## 1  1e-03 0.001 0.3358209         NA
+## 2  1e-02 0.001 0.3358209         NA
+## 3  1e-01 0.001 0.3358209         NA
+## 4  1e+00 0.001 0.1753731         NA
+## 5  5e+00 0.001 0.1567164         NA
+## 6  1e+01 0.001 0.1567164         NA
+## 7  1e+02 0.001 0.1604478         NA
+## 8  1e-03 0.010 0.3358209         NA
+## 9  1e-02 0.010 0.3358209         NA
+## 10 1e-01 0.010 0.2089552         NA
+## 11 1e+00 0.010 0.1529851         NA
+## 12 5e+00 0.010 0.1567164         NA
+## 13 1e+01 0.010 0.1641791         NA
+## 14 1e+02 0.010 0.1604478         NA
+## 15 1e-03 1.000 0.3358209         NA
+## 16 1e-02 1.000 0.3358209         NA
+## 17 1e-01 1.000 0.3171642         NA
+## 18 1e+00 1.000 0.1940299         NA
+## 19 5e+00 1.000 0.2126866         NA
+## 20 1e+01 1.000 0.2052239         NA
+## 21 1e+02 1.000 0.2388060         NA</code></pre>
 <p>Yay! same-same. Time to predict.</p>
 <pre class="r"><code>## MATRIX ##
 yhatM &lt;- predict(tune.outM$best.model, newdata = x.test) #model only accepts features, not the Y variable
 table(predict=yhatM, truth=y.test)</code></pre>
 <pre><code>##        truth
 ## predict  CH  MM
-##      CH 137  31
-##      MM  19  81</code></pre>
+##      CH 141  32
+##      MM  15  80</code></pre>
 <pre class="r"><code>## DATAFRAME ##
 yhat &lt;- predict(tune.out$best.model, newdata = OJ[-train,]) #model only accepts features, not the Y variable
 table(predict=yhat, truth=OJ[-train,]$Purchase)</code></pre>
 <pre><code>##        truth
 ## predict  CH  MM
-##      CH 137  31
-##      MM  19  81</code></pre>
+##      CH 140  31
+##      MM  16  81</code></pre>
 <p>Test binomial possibility</p>
 <pre class="r"><code># don&#39;t think this is an option 
 set.seed(12)

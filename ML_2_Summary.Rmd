@@ -1918,7 +1918,7 @@ Finally, for a **radial SVM**, it is necessary to determine the optimal cost and
 previous two cases: 
 
 ``` {r eval=F}
-tune_out_radial <- tune(svm, y~x, data=data_frame, kernel='polynomial', 
+tune_out_radial <- tune(svm, y~x, data=data_frame, kernel='radial', 
                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100), 
                             gamma=c(0.5,1,2,3,4)), scale=TRUE)
 ```

@@ -1,0 +1,241 @@
+---
+title: "Matrix v Dataframe | Classification(single or multi) v Regression"
+author: "Thomas Trankle, M.S. Business Analytics Candidate - Class of 2021"
+date: "4/13/2021"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## SVM
+
+### Classification - MAKE SURE Y IS FACTOR
+```{r}
+library(ISLR) #Auto data
+library(e1071) #SVM functions
+data(Auto)
+medianMPG <- median(Auto$mpg) #median MPG 
+Auto$binaryMPG <- as.factor(Auto$mpg > medianMPG)
+
+# Remove variables 
+## Numeric MPG is replaced with binaryMPG
+## name is a string that will introduce many unwanted coefficients 
+Auto <- subset(Auto, select=-c(mpg, name))
+
+# Scale data 
+## This could also be done with scale=True in the model 
+Auto$cylinders <- scale(Auto$cylinders)
+Auto$displacement <- scale(Auto$displacement)
+Auto$horsepower <- scale(Auto$horsepower)
+Auto$weight <- scale(Auto$weight)
+Auto$acceleration <- scale(Auto$acceleration)
+Auto$year <- scale(Auto$year)
+Auto$origin <- scale(Auto$origin)
+
+
+AutoMatrix <- as.matrix(subset(Auto, select=-c(binaryMPG)))
+AutoY <- Auto$binaryMPG
+```
+
+### Model Creation
+```{r, eval = FALSE}
+data(iris)
+attach(iris)
+# General setup
+## classification mode
+# default with factor response:
+model <- svm(Species ~ ., data = iris)
+
+# alternatively the traditional interface:
+x <- subset(iris, select = -Species)
+y <- Species
+model <- svm(x, y) 
+```
+
+```{r}
+### MATRIX ####
+set.seed(12)
+tune.outM <- tune(svm, AutoMatrix, AutoY, kernel='linear', 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+summary(tune.outM)
+
+## DATAFRAME ##
+set.seed(12)
+tune.out <- tune(svm, binaryMPG~., data=Auto, kernel='linear', 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+summary(tune.out)
+
+```
+
+### Predictions
+```{r}
+
+## MATRIX ##
+yhatM <- predict(tune.outM$best.model, newdata = AutoMatrix) #model only accepts features, not the Y variable
+table(predict=yhatM, truth=Auto$binaryMPG)
+
+## DATAFRAME ##
+yhat <- predict(tune.out$best.model, newdata = Auto) #model only accepts features, not the Y variable
+table(predict=yhat, truth=Auto$binaryMPG)
+```
+
+## PCA
+```{r}
+data <- USArrests          # load data
+scaled.data <- scale(data) # center and scale
+class(scaled.data)         # ensure data is matrix
+```
+
+### Run function/model
+```{r}
+
+## MATRIX ## dont need to scale, done above
+pr.outM <- prcomp(scaled.data, scale = F)
+summary(pr.outM)
+
+## DATAFRAME ## scale
+pr.out <- prcomp(data, scale = TRUE)
+summary(pr.outM)
+
+pr.outM <- prcomp(as.data.frame(scaled.data), scale = F)
+summary(pr.outM)
+
+
+```
+
+### Predict 
+```{r}
+# NA
+```
+
+## KMeans
+```{r}
+# Data
+set.seed(2)
+x <- matrix(rnorm (50*2), ncol=2) # Create a 50 X 2 matrix with samples from a 
+                               # normal distributio
+
+x[1:25,1] <- x[1:25,1]+3   # Move half the points 3 units right and 
+x[1:25,2] <- x[1:25,2]-4  
+```
+
+### Model
+```{r}
+# Matrix
+set.seed(4)
+km.out <- kmeans (x,3, nstart = 20)
+km.out
+
+## Dataframe -- all columns need to be numeric
+set.seed(4)
+df <- as.data.frame(x)
+km.out <- kmeans (df,3, nstart = 20)
+km.out
+
+```
+
+### Predict
+```{r}
+#NA
+```
+
+## Hierarchical Clustering
+
+```{r}
+# same data as kmeans -- x and df
+```
+
+Model
+```{r}
+par(mfrow=c(1,2))
+hc.average <- hclust(dist(x), method ="average")
+
+plot(hc.average , main="Average Linkage", xlab="", sub="",
+cex=.9, col = "goldenrod3")
+
+hc.average <- hclust(dist(df), method ="average")
+
+plot(hc.average , main="Average Linkage", xlab="", sub="",
+cex=.9, col = "goldenrod3")
+```
+
+## Lets try everything with our good friend OJ
+
+### Data
+```{r}
+attach(OJ) #OJ dataframe from ISLR
+OJ$Purchase <- as.factor(OJ$Purchase)
+x=model.matrix(Purchase~.,OJ)[,-1]
+y=OJ$Purchase
+
+
+#(0) Modify the code so the training set is 75% and test set is 25% of the dataframe
+set.seed(5082)
+train = sample(1:nrow(x), nrow(x)*.75)
+test = (-train)
+x.train = x[train,]
+x.test = x[-train, ]
+y.train = y[train]
+y.test =y[-train]
+```
+
+
+### SVM
+```{r}
+### MATRIX ####
+set.seed(12)
+tune.outM <- tune(svm, x.train, y.train, kernel='radial', 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+summary(tune.outM)
+
+## DATAFRAME ##
+set.seed(12)
+tune.out <- tune(svm, Purchase~ ., data=OJ[train,], kernel='radial', 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE)
+summary(tune.out)
+
+```
+
+Yay! same-same. Time to predict.
+
+```{r}
+## MATRIX ##
+yhatM <- predict(tune.outM$best.model, newdata = x.test) #model only accepts features, not the Y variable
+table(predict=yhatM, truth=y.test)
+
+## DATAFRAME ##
+yhat <- predict(tune.out$best.model, newdata = OJ[-train,]) #model only accepts features, not the Y variable
+table(predict=yhat, truth=OJ[-train,]$Purchase)
+```
+
+Test binomial possibility
+```{r}
+# don't think this is an option 
+set.seed(12)
+tune.outM <- tune(svm, x.train, y.train, kernel='radial', 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)), scale=TRUE,
+                 probability = T)
+summary(tune.outM)
+```
+
+```{r}
+bestmodel <- tune.outM$best.model
+bestmodel
+```
+
+## Think she could as svm polynomial kernel and loop to fine best degree
+```{r}
+## DATAFRAME ##
+set.seed(12)
+tune.out <- tune(svm, Purchase~ ., data=OJ[train,], kernel='polynomial', 
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100),
+                             degree = seq(1:8)), scale=TRUE)
+summary(tune.out)
+```
+
